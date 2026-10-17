@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Tool caches and coverage output
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Secrets and local config. .env.example stays tracked.
+.env
+.env.*
+!.env.example
+
+# Raw run output can contain target responses, so it never goes into git.
+# Sanitized evidence meant for the README goes in proof/ instead.
+reports/
+evidence/
+runs/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store

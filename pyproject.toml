@@ -1,0 +1,88 @@
+[build-system]
+# Why: uv_build is uv's own build backend. The upper bound is the next minor release,
+# because uv_build is versioned together with uv and a new minor can change behaviour.
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
+
+[project]
+name = "fazle-ai-red-team-toolkit"
+version = "0.1.0"
+description = "Automated red-team and evaluation suite for LLM and RAG applications. Authorized testing only."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.md"]
+authors = [{ name = "Fazle Rabbi", email = "mfrabbi.ai@gmail.com" }]
+requires-python = ">=3.13,<3.14"
+classifiers = [
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+# Why: empty on purpose. garak, PyRIT, DeepTeam and IBM ART are large and each pins its
+# own neighbours, so they stay out of this dependency set and run from separate environments.
+dependencies = []
+
+[tool.uv]
+# Why: same pin as the target repository, so one uv install works for both.
+required-version = "==0.12.21"
+
+[tool.uv.build-backend]
+module-name = "redteam_toolkit"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Why: "S" (bandit) is on from the start. This is a security toolkit, so its own code gets
+# the same scrutiny as the code it attacks.
+select = [
+    "E", "W",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "S",
+    "SIM",
+    "C4",
+    "PTH",
+    "PT",
+    "ARG",
+    "T20",
+    "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Why: pytest is built on bare assert, and fixtures often take arguments they do not read.
+"tests/**" = ["S101", "ARG001"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+# Why: a warning today is a failure tomorrow. Turning warnings into errors keeps them visible.
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["redteam_toolkit"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

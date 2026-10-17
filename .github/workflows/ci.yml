@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Why: least privilege by default. A job-level `permissions:` block REPLACES this one
+# (it does not merge), so a job that needs security-events: write must also declare
+# contents: read.
+permissions:
+  contents: read
+
+# Why: a new push to the same ref cancels the stale run instead of queueing it.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Why: one place to pin uv. Without it setup-uv falls back to the latest release, so a
+  # new uv could change CI behaviour with no commit on our side. Same pin as pyproject.toml.
+  UV_VERSION: "0.12.21"
+  # Why: same interpreter as .python-version and the target repository.
+  PYTHON_VERSION: "3.13.15"
+
+# Why: runs-on names an explicit Ubuntu release instead of ubuntu-latest, so the runner OS
+# only changes when this file changes.
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      # Why: --locked fails the job if uv.lock is out of date with pyproject.toml, instead
+      # of quietly re-resolving to whatever is newest today.
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format check
+        run: uv run ruff format --check .
+
+      - name: mypy strict
+        run: uv run mypy
+
+  test:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: pytest with coverage gate
+        run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
+
+  security:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    needs: lint-and-typecheck
+
+    # Why: CodeQL uploads its results to the Security tab, which needs security-events: write.
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      # Why: audit exactly what uv.lock pins, dev tools included. --no-deps and
+      # --disable-pip stop pip-audit from resolving anything on its own, so the lock file
+      # stays the single source of truth.
+      - name: Export locked dependencies
+        run: uv export --locked --no-emit-project --format requirements-txt --no-hashes --output-file requirements-audit.txt
+
+      - name: pip-audit
+        run: uvx pip-audit@2.10.1 --requirement requirements-audit.txt --no-deps --disable-pip
+
+      - name: CodeQL init
+        uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: python,actions
+          build-mode: none
+
+      - name: CodeQL analyze
+        uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
