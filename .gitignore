@@ -19,6 +19,10 @@ htmlcov/
 .env.*
 !.env.example
 
+# Real Rules of Engagement files name clients and people. The committed example
+# in examples/ is the only one that belongs in git.
+engagements/
+
 # Raw run output can contain target responses, so it never goes into git.
 # Sanitized evidence meant for the README goes in proof/ instead.
 reports/

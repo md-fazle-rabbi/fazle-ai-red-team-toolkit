@@ -1,0 +1,51 @@
+# Rules of Engagement for a self test of fazle-enterprise-ai-platform on this machine.
+# Copy this file into engagements/ (git-ignored) and edit it. Do not put secrets here.
+# Credentials go in an environment variable. This file only names the variable.
+
+schema_version = 1
+engagement_id = "repo1-local-selftest"
+credentials_env_var = "TARGET_TOKEN_LOCAL"
+allowed_suites = ["prompt_injection", "image_prompt_injection", "jailbreak", "pii_leakage"]
+
+[client]
+name = "Fazle Rabbi (self test)"
+
+[authorized_by]
+name = "Fazle Rabbi"
+role = "System owner"
+email = "mfrabbi.ai@gmail.com"
+
+[operator]
+name = "Fazle Rabbi"
+role = "Operator"
+email = "mfrabbi.ai@gmail.com"
+
+# Every date-time needs a UTC offset. The end is exclusive. The longest window is 31 days.
+[window]
+start = 2026-10-18T00:00:00+06:00
+end = 2026-10-25T00:00:00+06:00
+
+# Ceilings in the code: 120 requests per minute, 10000 requests in total, 10 at once.
+# Repo 1's embedding free tier allows 3 requests per minute, so stay well under that.
+[limits]
+requests_per_minute = 2
+total_requests = 500
+concurrency = 1
+
+# self_owned is allowed only when every target is local. A client system needs a
+# signed_document with the SHA-256 of the signed file.
+[authorization]
+kind = "self_owned"
+reference = "Own system, local machine only"
+
+[stop_contact]
+name = "Fazle Rabbi"
+role = "Operator"
+email = "mfrabbi.ai@gmail.com"
+
+[[targets]]
+id = "repo1-local"
+base_url = "http://localhost:8000"
+allowed_paths = ["/query", "/query/stream"]
+environment = "local"
+real_personal_data = false

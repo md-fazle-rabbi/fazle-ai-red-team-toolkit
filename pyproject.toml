@@ -17,9 +17,13 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
-# Why: empty on purpose. garak, PyRIT, DeepTeam and IBM ART are large and each pins its
-# own neighbours, so they stay out of this dependency set and run from separate environments.
-dependencies = []
+# Why: pydantic only. It validates the Rules of Engagement file. garak, PyRIT, DeepTeam and
+# IBM ART are large and each pins its own neighbours, so they stay out of this dependency
+# set and run from separate environments.
+dependencies = ["pydantic>=2.14.1,<3"]
+
+[project.scripts]
+redteam-toolkit = "redteam_toolkit.cli:main"
 
 [tool.uv]
 # Why: same pin as the target repository, so one uv install works for both.

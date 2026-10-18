@@ -1,0 +1,21 @@
+== no file given
+refused: No Rules of Engagement file given. No file, no run.
+exit=2
+== valid file
+valid: engagement=repo1-local-selftest roe_sha256=4e93e7efc3974e694c640dd9223bf322b3acd3acd0d68bd6e34043e8c3b1bbca
+exit=0
+== allowed request
+permitted: engagement=repo1-local-selftest target=repo1-local suite=prompt_injection roe_sha256=4e93e7efc3974e694c640dd9223bf322b3acd3acd0d68bd6e34043e8c3b1bbca
+exit=0
+== path outside scope
+refused: Request path is not in allowed_paths
+exit=2
+== suite not authorized
+refused: Suite 'rogue_agent' is not authorized
+exit=2
+== wrong host
+refused: Request URL is not on the authorized target (scheme, host or port)
+exit=2
+== look-alike host
+refused: Request URL rejected: URL must not contain credentials
+exit=2

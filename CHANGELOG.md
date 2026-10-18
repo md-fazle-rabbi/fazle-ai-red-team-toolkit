@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### 2026-10-18
+- Added the Rules of Engagement gate in `src/redteam_toolkit/roe.py`. The toolkit now refuses to run without a valid file, so authorization is enforced by code and not only by the README. The file is checked before anything else, and a refusal sends nothing.
+- Added the `redteam-toolkit` command with `validate` and `check`. It exits with 0 when authorized and 2 when refused, and prints the SHA-256 of the file so logs and reports can point back to exactly what was authorized.
+- Added an example file in `examples/` and made `engagements/` git-ignored, so real files that name clients and people stay out of git.
+- Added tests that try to break the gate: unknown keys, missing offsets, scope tricks in URLs such as `..`, double encoding, look-alike hosts and user info, and a window checked at its exact edges.
+- Added `docs/adr/ADR-006` recording why the file is TOML, how the gate decides, and what it cannot check.
+- Added pydantic as the first dependency, to validate the file strictly.
+
 ### 2026-10-17
 - Added the project skeleton: a typed Python package in `src/redteam_toolkit`, pinned to Python 3.13.15 and uv 0.12.21, so every later change has something to build and test against.
 - Added tooling config in `pyproject.toml`: ruff for lint and format (with the security rules on), mypy in strict mode, and pytest with a 90 percent coverage gate.
