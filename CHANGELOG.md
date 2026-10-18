@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### 2026-10-18
+- Added a local stub target in `src/redteam_toolkit/stub_target.py`, with a weak mode and a hardened mode, so CI can show the toolkit telling a failing target from a passing one without depending on Repo 1, a model or a network. It copies the request and response shape of Repo 1's `POST /query` and answers from three synthetic documents.
+- Added tests that pin what each mode does: the weak mode leaks its canary and raw PII, the hardened firewall blocks a plain injection, and the output scrub catches a spaced-out injection that slips past the firewall.
+- Added `docs/adr/ADR-007` recording why CI runs against a stub and Repo 1 is attacked only in manual authorized runs.
+- Added fastapi, uvicorn and httpx2 to the dev dependencies. They are used by the stub and its tests only.
 - Added the Rules of Engagement gate in `src/redteam_toolkit/roe.py`. The toolkit now refuses to run without a valid file, so authorization is enforced by code and not only by the README. The file is checked before anything else, and a refusal sends nothing.
 - Added the `redteam-toolkit` command with `validate` and `check`. It exits with 0 when authorized and 2 when refused, and prints the SHA-256 of the file so logs and reports can point back to exactly what was authorized.
 - Added an example file in `examples/` and made `engagements/` git-ignored, so real files that name clients and people stay out of git.

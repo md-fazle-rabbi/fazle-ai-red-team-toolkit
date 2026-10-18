@@ -11,8 +11,8 @@ to attack fazle-enterprise-ai-platform, and, with written authorization, client 
 Contact: mfrabbi.ai@gmail.com · Demo: TBD
 
 ## Status
-Early. The Rules of Engagement gate works. No attack suite exists yet, and nothing in this
-repository sends traffic to a target.
+Early. The Rules of Engagement gate and a local stub target work. No attack suite exists
+yet, and nothing in this repository sends traffic to a target.
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target
@@ -37,6 +37,21 @@ Exit code 0 means authorized. Exit code 2 means refused, and nothing was sent. W
 `--file` the tool reads the path in `REDTEAM_ROE_PATH`. The `engagements/` folder is
 git-ignored because real files name clients and people.
 
+## Stub target
+CI cannot attack fazle-enterprise-ai-platform: it needs a database, a cache, a login server
+and free-tier model keys, and it is slower than the load gate allows. So the toolkit ships
+a local stub with the same `POST /query` shape and two modes. `weak` follows injected
+instructions, leaks a canary string and returns raw PII. `hardened` has a plain-text
+firewall, a canary scrub and PII redaction. Every value is synthetic. Reasoning is in
+[ADR-007](docs/adr/ADR-007-local-stub-target-for-ci.md).
+
+```bash
+.venv/bin/uvicorn --factory redteam_toolkit.stub_target:weak_app --port 8010
+```
+
+Use `hardened_app` for the other mode. Run it on localhost only: it is vulnerable on
+purpose, so never pass `--host 0.0.0.0`.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 
@@ -50,6 +65,13 @@ uv run pytest --cov --cov-fail-under=90
 
 ## Known limitations
 - No attack code exists yet. Nothing in this repository sends traffic to a target.
+- A result against the stub says nothing about fazle-enterprise-ai-platform. The stub has
+  three documents and no model, and its answers come from fixed rules.
+- Hardened mode is imperfect on purpose. A spaced-out injection such as `i.g.n.o.r.e`
+  passes its firewall, and only the output scrub stops the leak. Nothing measures a bypass
+  rate against it yet.
+- The stub's response fields are copied by hand from Repo 1. Nothing checks that they
+  still match.
 - The gate checks what the file says is authorized. It cannot tell whether the signature
   behind the file is genuine. For a client engagement the file records the SHA-256 of the
   signed document, and a person still has to check that document.

@@ -33,11 +33,16 @@ required-version = "==0.12.21"
 module-name = "redteam_toolkit"
 
 [dependency-groups]
+# Why: fastapi, uvicorn and httpx2 serve the local stub target and its tests only. fastapi
+# is held below 0.144 because that release came out on the day this was added.
 dev = [
+    "fastapi>=0.143.0,<0.144",
+    "httpx2>=2.13.1,<3",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.1",
+    "uvicorn>=0.54.0,<1",
 ]
 
 [tool.ruff]
