@@ -11,8 +11,8 @@ to attack fazle-enterprise-ai-platform, and, with written authorization, client 
 Contact: mfrabbi.ai@gmail.com · Demo: TBD
 
 ## Status
-Early. The Rules of Engagement gate and a local stub target work. No attack suite exists
-yet, and nothing in this repository sends traffic to a target.
+Early. The Rules of Engagement gate, a local stub target, and a gated HTTP runner work.
+No attack suite exists yet: nothing scores a response or decides pass or fail.
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target
@@ -52,6 +52,14 @@ firewall, a canary scrub and PII redaction. Every value is synthetic. Reasoning 
 Use `hardened_app` for the other mode. Run it on localhost only: it is vulnerable on
 purpose, so never pass `--host 0.0.0.0`.
 
+## Gated HTTP runner
+`redteam_toolkit.runner.send_probe` is the only function in this toolkit allowed to make
+an outbound request. It calls `RoEGate.permit` first; if that refuses, nothing is sent.
+It returns a `ProbeResult` (status code, body, elapsed time, and an error string on a
+connection failure) and makes no judgement about whether the response is a pass or a
+fail — that is a suite's job, and no suite exists yet. Reasoning is in
+[ADR-008](docs/adr/ADR-008-gated-http-runner.md).
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 
@@ -64,7 +72,8 @@ uv run pytest --cov --cov-fail-under=90
 ```
 
 ## Known limitations
-- No attack code exists yet. Nothing in this repository sends traffic to a target.
+- No attack suite exists yet. The runner can send a request once a suite builds one, but
+  nothing decides what a response means.
 - A result against the stub says nothing about fazle-enterprise-ai-platform. The stub has
   three documents and no model, and its answers come from fixed rules.
 - Hardened mode is imperfect on purpose. A spaced-out injection such as `i.g.n.o.r.e`
@@ -80,9 +89,13 @@ uv run pytest --cov --cov-fail-under=90
   minute, 10,000 requests in total, 10 at once, a 31 day window) are values I chose, not
   measured ones.
 - The URL check compares text, not the address a name resolves to, and it cannot stop an
-  HTTP client from following a redirect off the target. Runners will have to turn
-  redirects off.
-- A runner that forgets to call the gate bypasses it. No runner exists to test this yet.
+  HTTP client from following a redirect off the target. `send_probe` turns redirects off
+  by default; a caller that builds its own client has to do the same.
+- No rate limiting or concurrency control exists yet. The Rules of Engagement file's
+  `requests_per_minute`, `total_requests` and `concurrency` are validated but not
+  enforced, so a suite that calls `send_probe` in a loop can still exceed them.
+- `send_probe` opens and closes its own HTTP client per call unless one is passed in,
+  which is wasteful for a suite that sends many requests.
 - garak, PyRIT, DeepTeam and IBM ART are not installed yet. IBM ART's package metadata
   lists Python 3.10 to 3.12 and not 3.13, so it is unverified on the interpreter this
   repository uses.

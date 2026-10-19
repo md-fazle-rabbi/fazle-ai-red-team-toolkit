@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### 2026-10-19
+- Added `redteam_toolkit.runner.send_probe`, the one function in this toolkit allowed to make an outbound HTTP request. It calls the Rules of Engagement gate first and sends nothing if the gate refuses. It records the status code, body, elapsed time and any connection error, and makes no judgement about whether a response passed or failed.
+- Added `docs/adr/ADR-008` recording why the gate check and the network call live in one place, and what still has to be built (rate limiting, concurrency).
+- Moved httpx2 from the dev group to the main dependencies, since the runner needs it at runtime.
+- Added tests that check a refused request never reaches the network, a permitted request against the local stub is recorded correctly in both its modes, and a connection failure is caught rather than raised.
+
 ### 2026-10-18
 - Added a local stub target in `src/redteam_toolkit/stub_target.py`, with a weak mode and a hardened mode, so CI can show the toolkit telling a failing target from a passing one without depending on Repo 1, a model or a network. It copies the request and response shape of Repo 1's `POST /query` and answers from three synthetic documents.
 - Added tests that pin what each mode does: the weak mode leaks its canary and raw PII, the hardened firewall blocks a plain injection, and the output scrub catches a spaced-out injection that slips past the firewall.
