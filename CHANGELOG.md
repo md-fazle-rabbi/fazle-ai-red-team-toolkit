@@ -7,6 +7,9 @@
 - Added `docs/adr/ADR-008` recording why the gate check and the network call live in one place, and what still has to be built (rate limiting, concurrency).
 - Moved httpx2 from the dev group to the main dependencies, since the runner needs it at runtime.
 - Added tests that check a refused request never reaches the network, a permitted request against the local stub is recorded correctly in both its modes, and a connection failure is caught rather than raised.
+- Added `examples/roe.stub-local.toml`, the matching Rules of Engagement file for the local stub target, with two targets at the same local address for the stub's weak and hardened modes.
+- Added `tests/test_examples.py`, which loads both example files from disk and checks they still validate and gate as expected. Until now nothing in the test suite caught a schema change quietly breaking an example.
+- Wired the gate, the runner and the stub together end to end for the first time (documented in the README), confirming `send_probe` records a real leak from the weak stub and a real 400 from the hardened stub's firewall.
 
 ### 2026-10-18
 - Added a local stub target in `src/redteam_toolkit/stub_target.py`, with a weak mode and a hardened mode, so CI can show the toolkit telling a failing target from a passing one without depending on Repo 1, a model or a network. It copies the request and response shape of Repo 1's `POST /query` and answers from three synthetic documents.

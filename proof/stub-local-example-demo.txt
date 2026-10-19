@@ -1,0 +1,4 @@
+=== weak, via the gate and runner ===
+status: 200 canary leaked: True
+=== hardened, via the gate and runner ===
+status: 400 body: {"detail":"Blocked by the injection firewall"}

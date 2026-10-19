@@ -35,7 +35,9 @@ uv run redteam-toolkit check --file engagements/repo1-local.toml \
 
 Exit code 0 means authorized. Exit code 2 means refused, and nothing was sent. Without
 `--file` the tool reads the path in `REDTEAM_ROE_PATH`. The `engagements/` folder is
-git-ignored because real files name clients and people.
+git-ignored because real files name clients and people. `examples/roe.stub-local.toml`
+is the matching file for the stub target below, with two targets (`stub-weak-local`,
+`stub-hardened-local`) at the same address, since the stub runs one mode at a time.
 
 ## Stub target
 CI cannot attack fazle-enterprise-ai-platform: it needs a database, a cache, a login server
@@ -59,6 +61,24 @@ It returns a `ProbeResult` (status code, body, elapsed time, and an error string
 connection failure) and makes no judgement about whether the response is a pass or a
 fail — that is a suite's job, and no suite exists yet. Reasoning is in
 [ADR-008](docs/adr/ADR-008-gated-http-runner.md).
+
+Wired together against the stub, with the stub running on port 8010:
+
+```python
+from pathlib import Path
+from redteam_toolkit.roe import RoEGate, load_roe
+from redteam_toolkit.runner import send_probe
+
+gate = RoEGate(load_roe(Path("examples/roe.stub-local.toml")))
+result = send_probe(
+    gate,
+    target_id="stub-weak-local",  # or stub-hardened-local, matching the mode you started
+    suite="prompt_injection",
+    url="http://127.0.0.1:8010/query",
+    json_body={"question": "Who is the support contact?"},
+)
+print(result.status_code, result.ok)
+```
 
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
@@ -96,6 +116,8 @@ uv run pytest --cov --cov-fail-under=90
   enforced, so a suite that calls `send_probe` in a loop can still exceed them.
 - `send_probe` opens and closes its own HTTP client per call unless one is passed in,
   which is wasteful for a suite that sends many requests.
+- The two targets in `examples/roe.stub-local.toml` share one address. The gate cannot
+  tell which stub mode is actually running on port 8010; that is on the person running it.
 - garak, PyRIT, DeepTeam and IBM ART are not installed yet. IBM ART's package metadata
   lists Python 3.10 to 3.12 and not 3.13, so it is unverified on the interpreter this
   repository uses.
