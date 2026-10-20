@@ -1,0 +1,5 @@
+request 1: status 200 at 0.0s
+request 2: status 200 at 1.0s
+request 3: status 200 at 2.0s
+request 4: refused: The file authorizes 3 requests and all of them are used
+budget used: 3

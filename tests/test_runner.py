@@ -15,7 +15,8 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from redteam_toolkit.roe import RoEGate, RoEViolationError, load_roe
+from redteam_toolkit.limits import BudgetExhaustedError, RequestBudget
+from redteam_toolkit.roe import Limits, RoEGate, RoEViolationError, load_roe
 from redteam_toolkit.runner import send_probe
 from redteam_toolkit.stub_target import hardened_app, weak_app
 from tests.roe_samples import VALID, with_url
@@ -166,3 +167,80 @@ def test_send_probe_can_open_and_close_its_own_client(tmp_path: Path) -> None:
     )
     assert not result.ok
     assert result.status_code is None
+
+
+def _budget(*, total: int, sleeps: list[float] | None = None) -> RequestBudget:
+    # Why: a clock that never moves and a sleep that only records. The tests never
+    # wait, and every second request has to ask for a full interval.
+    record = sleeps if sleeps is not None else []
+    limits = Limits(requests_per_minute=60, total_requests=total, concurrency=1)
+    return RequestBudget(limits, clock=lambda: 1000.0, sleep=record.append)
+
+
+def test_a_budget_is_charged_once_per_permitted_request(tmp_path: Path) -> None:
+    gate = _gate(tmp_path)
+    budget = _budget(total=5)
+    for _ in range(2):
+        send_probe(
+            gate,
+            target_id="repo1-local",
+            suite="prompt_injection",
+            url="http://localhost:8000/query",
+            json_body={"question": "x"},
+            client=_client(weak_app),
+            budget=budget,
+        )
+    assert budget.used == 2
+
+
+def test_the_second_request_waits_for_its_slot(tmp_path: Path) -> None:
+    gate = _gate(tmp_path)
+    sleeps: list[float] = []
+    budget = _budget(total=5, sleeps=sleeps)
+    for _ in range(2):
+        send_probe(
+            gate,
+            target_id="repo1-local",
+            suite="prompt_injection",
+            url="http://localhost:8000/query",
+            json_body={"question": "x"},
+            client=_client(weak_app),
+            budget=budget,
+        )
+    assert sleeps == [1.0]
+
+
+def test_a_refused_request_costs_nothing_from_the_budget(tmp_path: Path) -> None:
+    gate = _gate(tmp_path)
+    budget = _budget(total=5)
+    with pytest.raises(RoEViolationError):
+        send_probe(
+            gate,
+            target_id="no-such-target",
+            suite="prompt_injection",
+            url="http://localhost:8000/query",
+            json_body={"question": "x"},
+            client=_client(weak_app),
+            budget=budget,
+        )
+    assert budget.used == 0
+
+
+def test_an_exhausted_budget_sends_nothing(tmp_path: Path) -> None:
+    def boom(request: httpx2.Request) -> httpx2.Response:
+        raise AssertionError("send_probe must not use the network when exhausted")
+
+    gate = _gate(tmp_path)
+    budget = _budget(total=1)
+    budget.acquire()
+    client = httpx2.Client(transport=httpx2.MockTransport(boom))
+    with pytest.raises(BudgetExhaustedError):
+        send_probe(
+            gate,
+            target_id="repo1-local",
+            suite="prompt_injection",
+            url="http://localhost:8000/query",
+            json_body={"question": "x"},
+            client=client,
+            budget=budget,
+        )

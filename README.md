@@ -11,8 +11,9 @@ to attack fazle-enterprise-ai-platform, and, with written authorization, client 
 Contact: mfrabbi.ai@gmail.com · Demo: TBD
 
 ## Status
-Early. The Rules of Engagement gate, a local stub target, and a gated HTTP runner work.
-No attack suite exists yet: nothing scores a response or decides pass or fail.
+Early. The Rules of Engagement gate, a local stub target, a gated HTTP runner and a
+request budget work. No attack suite exists yet: nothing scores a response or decides
+pass or fail.
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target
@@ -84,6 +85,33 @@ result = send_probe(
 print(result.status_code, result.ok)
 ```
 
+## Request budget
+`RoEGate.permit` says whether one request is in scope. It says nothing about how fast or
+how many requests are sent. `redteam_toolkit.limits.RequestBudget` enforces the file's
+`requests_per_minute` and `total_requests`. Pass one to `send_probe` and every request
+that the gate allows waits for its turn, evenly spaced, and `BudgetExhaustedError` stops
+the run once `total_requests` is used up. A refused request costs nothing. Design and
+trade-offs are in [ADR-009](docs/adr/ADR-009-request-budget.md).
+
+```python
+from redteam_toolkit.limits import RequestBudget
+
+loaded = load_roe(Path("examples/roe.stub-local.toml"))
+gate = RoEGate(loaded)
+budget = RequestBudget(loaded.roe.limits)  # the limits block of the same file
+result = send_probe(
+    gate,
+    target_id="stub-weak-local",
+    suite="prompt_injection",
+    url="http://127.0.0.1:8010/query",
+    json_body={"question": "Who is the support contact?"},
+    budget=budget,
+)
+```
+
+`RoEGate` does not expose the limits, so read them from the same loaded file the gate
+was built from.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 
@@ -109,16 +137,20 @@ uv run pytest --cov --cov-fail-under=90
 - The gate checks what the file says is authorized. It cannot tell whether the signature
   behind the file is genuine. For a client engagement the file records the SHA-256 of the
   signed document, and a person still has to check that document.
-- The request limits in the file are validated against ceilings in the code, but nothing
-  enforces them yet, because no suite runner exists. The ceilings (120 requests per
-  minute, 10,000 requests in total, 10 at once, a 31 day window) are values I chose, not
-  measured ones.
+- The request limits in the file are validated against ceilings in the code. The ceilings
+  (120 requests per minute, 10,000 requests in total, 10 at once, a 31 day window) are
+  values I chose, not measured ones.
 - The URL check compares text, not the address a name resolves to, and it cannot stop an
   HTTP client from following a redirect off the target. `send_probe` turns redirects off
   by default; a caller that builds its own client has to do the same.
-- No rate limiting or concurrency control exists yet. The Rules of Engagement file's
-  `requests_per_minute`, `total_requests` and `concurrency` are validated but not
-  enforced, so a suite that calls `send_probe` in a loop can still exceed them.
+- Using the budget is opt in. `send_probe` works without one, and nothing forces a suite
+  to pass it, so a suite that skips it can still send as fast as it likes.
+- `RequestBudget` is sequential, in memory and not thread safe. The count starts at zero
+  in every new process, so two runs in a row each get the full `total_requests`. The
+  file's `concurrency` limit is exposed but not enforced, because no concurrent runner
+  exists.
+- The budget spaces requests by the file's rate. It does not know how fast the target can
+  actually answer, so a rate above what a real target can handle will still overload it.
 - `send_probe` opens and closes its own HTTP client per call unless one is passed in,
   which is wasteful for a suite that sends many requests.
 - The two targets in `examples/roe.stub-local.toml` share one address. The gate cannot

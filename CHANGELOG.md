@@ -12,6 +12,8 @@
 - Wired the gate, the runner and the stub together end to end for the first time (documented in the README), confirming `send_probe` records a real leak from the weak stub and a real 400 from the hardened stub's firewall.
 - Added `contracts/repo1-query-contract.json`, a hand-copied snapshot of Repo 1's `POST /query` request and response shape at commit 715a933, and `tests/test_stub_contract.py`, which fails if the stub's fields, types or request limits drift from it. The snapshot is not refreshed automatically.
 - Fixed the stub's `top_k` ceiling from 10 to 20. The new contract test showed Repo 1 allows up to 20.
+- Added `redteam_toolkit.limits.RequestBudget`, which enforces the Rules of Engagement file's `requests_per_minute` and `total_requests` instead of only validating them. Requests are evenly spaced, and `BudgetExhaustedError` (a gate-style refusal) stops the run when the total is used up. `send_probe` takes an optional `budget`, charged only after the gate allows the request, so a refusal costs nothing.
+- Added `docs/adr/ADR-009` recording why the budget is sequential and in memory, why spacing is even and not a sliding window, and why using it is opt in.
 
 ### 2026-10-18
 - Added a local stub target in `src/redteam_toolkit/stub_target.py`, with a weak mode and a hardened mode, so CI can show the toolkit telling a failing target from a passing one without depending on Repo 1, a model or a network. It copies the request and response shape of Repo 1's `POST /query` and answers from three synthetic documents.
