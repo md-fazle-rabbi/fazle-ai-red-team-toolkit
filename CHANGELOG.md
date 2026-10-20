@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### 2026-10-20
+- Added a `workflow-audit` job to CI that runs zizmor 1.30.1 on the workflow files in offline, pedantic mode. It fails on unpinned actions, injectable expressions and undocumented or excess permissions. zizmor is pinned to a release about six weeks old.
+- Tightened `ci.yml` to pass zizmor in pedantic mode: the Python version is read from a shell variable instead of being expanded into the command, every job has a name, and each permission carries a reason.
+- Added `docs/adr/ADR-010` recording why the Trivy scan from the plan was left out for now: the repository has no container image or infrastructure files, and the Trivy GitHub Actions were compromised in March 2026.
+
 ### 2026-10-19
 - Added `redteam_toolkit.runner.send_probe`, the one function in this toolkit allowed to make an outbound HTTP request. It calls the Rules of Engagement gate first and sends nothing if the gate refuses. It records the status code, body, elapsed time and any connection error, and makes no judgement about whether a response passed or failed.
 - Added `docs/adr/ADR-008` recording why the gate check and the network call live in one place, and what still has to be built (rate limiting, concurrency).

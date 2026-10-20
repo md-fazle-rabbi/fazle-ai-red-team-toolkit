@@ -29,6 +29,7 @@ env:
 # only changes when this file changes.
 jobs:
   lint-and-typecheck:
+    name: lint-and-typecheck
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
@@ -43,7 +44,7 @@ jobs:
           enable-cache: true
 
       - name: Install Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
+        run: uv python install "$PYTHON_VERSION"
 
       # Why: --locked fails the job if uv.lock is out of date with pyproject.toml, instead
       # of quietly re-resolving to whatever is newest today.
@@ -60,6 +61,7 @@ jobs:
         run: uv run mypy
 
   test:
+    name: test
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     needs: lint-and-typecheck
@@ -75,7 +77,7 @@ jobs:
           enable-cache: true
 
       - name: Install Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
+        run: uv python install "$PYTHON_VERSION"
 
       - name: Install dependencies
         run: uv sync --locked
@@ -84,15 +86,16 @@ jobs:
         run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
 
   security:
+    name: security
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     needs: lint-and-typecheck
 
     # Why: CodeQL uploads its results to the Security tab, which needs security-events: write.
     permissions:
-      contents: read
-      actions: read
-      security-events: write
+      contents: read # Why: check out the code
+      actions: read # Why: documented CodeQL requirement, it reads workflow run info
+      security-events: write # Why: CodeQL uploads its findings to the Security tab
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -105,7 +108,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
 
       - name: Install Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
+        run: uv python install "$PYTHON_VERSION"
 
       # Why: audit exactly what uv.lock pins, dev tools included. --no-deps and
       # --disable-pip stop pip-audit from resolving anything on its own, so the lock file
@@ -124,3 +127,28 @@ jobs:
 
       - name: CodeQL analyze
         uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+
+  workflow-audit:
+    name: workflow-audit
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install "$PYTHON_VERSION"
+
+      # Why: zizmor reads the workflow files for unpinned actions, injectable
+      # expressions and excess permissions. --offline skips the audits that call the
+      # GitHub API, so this step needs no token. --persona pedantic also reports code
+      # smells, and any finding fails the job. Pinned to a release that is several weeks
+      # old, because a scanner is part of the supply chain too.
+      - name: zizmor
+        run: uvx zizmor@1.30.1 --offline --persona pedantic .github/workflows
