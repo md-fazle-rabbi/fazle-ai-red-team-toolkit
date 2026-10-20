@@ -115,6 +115,10 @@ was built from.
 ## Threat map
 Each suite is mapped to STRIDE, MITRE ATLAS (release 2026.09) and the OWASP LLM Top 10 (2025 edition) in `src/redteam_toolkit/threat_map.py`. A test fails if a suite the gate allows has no mapping. The pairings are my judgement, and the entries say where the fit is partial. Reasoning is in [ADR-011](docs/adr/ADR-011-threat-map-as-code.md).
 
+![Heat map of STRIDE categories against OWASP LLM Top 10 entries, counting suites](docs/threat-map.svg)
+
+Regenerate it with `uv run python -c "import sys; from redteam_toolkit.heat_map import render_heat_map_svg as r; sys.stdout.write(r())" > docs/threat-map.svg`. A test fails when the committed file is out of date. The picture shows STRIDE against OWASP only; ATLAS techniques are in `threat_map.py` and are not drawn.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="872" height="584" viewBox="0 0 872 584" role="img" aria-labelledby="title desc" font-family="sans-serif">
+<title id="title">Threat map: STRIDE by OWASP LLM Top 10</title>
+<desc id="desc">Rows are STRIDE categories. Columns are OWASP LLM Top 10 2025 entries. Each number is how many suites map to that pair.</desc>
+<rect width="872" height="584" fill="#ffffff"/>
+<text x="248" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM01</text>
+<text x="312" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM02</text>
+<text x="376" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM03</text>
+<text x="440" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM04</text>
+<text x="504" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM05</text>
+<text x="568" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM06</text>
+<text x="632" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM07</text>
+<text x="696" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM08</text>
+<text x="760" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM09</text>
+<text x="824" y="44" font-size="13" font-weight="bold" text-anchor="middle" fill="#0f172a">LLM10</text>
+<text x="206" y="81" font-size="13" text-anchor="end" fill="#0f172a">Spoofing</text>
+<rect x="216" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM01" data-count="0"/>
+<rect x="280" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM02" data-count="0"/>
+<rect x="344" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM03" data-count="0"/>
+<rect x="408" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM04" data-count="0"/>
+<rect x="472" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM05" data-count="0"/>
+<rect x="536" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM06" data-count="0"/>
+<rect x="600" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM07" data-count="0"/>
+<rect x="664" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM08" data-count="0"/>
+<rect x="728" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM09" data-count="0"/>
+<rect x="792" y="56" width="62" height="38" fill="#f1f5f9" data-stride="spoofing" data-owasp="LLM10" data-count="0"/>
+<text x="206" y="121" font-size="13" text-anchor="end" fill="#0f172a">Tampering</text>
+<rect x="216" y="96" width="62" height="38" fill="#60a5fa" data-stride="tampering" data-owasp="LLM01" data-count="2"/>
+<text x="247" y="121" font-size="14" text-anchor="middle" fill="#0f172a">2</text>
+<rect x="280" y="96" width="62" height="38" fill="#f1f5f9" data-stride="tampering" data-owasp="LLM02" data-count="0"/>
+<rect x="344" y="96" width="62" height="38" fill="#bfdbfe" data-stride="tampering" data-owasp="LLM03" data-count="1"/>
+<text x="375" y="121" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="408" y="96" width="62" height="38" fill="#bfdbfe" data-stride="tampering" data-owasp="LLM04" data-count="1"/>
+<text x="439" y="121" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="472" y="96" width="62" height="38" fill="#f1f5f9" data-stride="tampering" data-owasp="LLM05" data-count="0"/>
+<rect x="536" y="96" width="62" height="38" fill="#bfdbfe" data-stride="tampering" data-owasp="LLM06" data-count="1"/>
+<text x="567" y="121" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="600" y="96" width="62" height="38" fill="#f1f5f9" data-stride="tampering" data-owasp="LLM07" data-count="0"/>
+<rect x="664" y="96" width="62" height="38" fill="#f1f5f9" data-stride="tampering" data-owasp="LLM08" data-count="0"/>
+<rect x="728" y="96" width="62" height="38" fill="#bfdbfe" data-stride="tampering" data-owasp="LLM09" data-count="1"/>
+<text x="759" y="121" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="792" y="96" width="62" height="38" fill="#f1f5f9" data-stride="tampering" data-owasp="LLM10" data-count="0"/>
+<text x="206" y="161" font-size="13" text-anchor="end" fill="#0f172a">Repudiation</text>
+<rect x="216" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM01" data-count="0"/>
+<rect x="280" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM02" data-count="0"/>
+<rect x="344" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM03" data-count="0"/>
+<rect x="408" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM04" data-count="0"/>
+<rect x="472" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM05" data-count="0"/>
+<rect x="536" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM06" data-count="0"/>
+<rect x="600" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM07" data-count="0"/>
+<rect x="664" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM08" data-count="0"/>
+<rect x="728" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM09" data-count="0"/>
+<rect x="792" y="136" width="62" height="38" fill="#f1f5f9" data-stride="repudiation" data-owasp="LLM10" data-count="0"/>
+<text x="206" y="201" font-size="13" text-anchor="end" fill="#0f172a">Information disclosure</text>
+<rect x="216" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM01" data-count="0"/>
+<rect x="280" y="176" width="62" height="38" fill="#bfdbfe" data-stride="information_disclosure" data-owasp="LLM02" data-count="1"/>
+<text x="311" y="201" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="344" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM03" data-count="0"/>
+<rect x="408" y="176" width="62" height="38" fill="#bfdbfe" data-stride="information_disclosure" data-owasp="LLM04" data-count="1"/>
+<text x="439" y="201" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="472" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM05" data-count="0"/>
+<rect x="536" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM06" data-count="0"/>
+<rect x="600" y="176" width="62" height="38" fill="#bfdbfe" data-stride="information_disclosure" data-owasp="LLM07" data-count="1"/>
+<text x="631" y="201" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="664" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM08" data-count="0"/>
+<rect x="728" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM09" data-count="0"/>
+<rect x="792" y="176" width="62" height="38" fill="#f1f5f9" data-stride="information_disclosure" data-owasp="LLM10" data-count="0"/>
+<text x="206" y="241" font-size="13" text-anchor="end" fill="#0f172a">Denial of service</text>
+<rect x="216" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM01" data-count="0"/>
+<rect x="280" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM02" data-count="0"/>
+<rect x="344" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM03" data-count="0"/>
+<rect x="408" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM04" data-count="0"/>
+<rect x="472" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM05" data-count="0"/>
+<rect x="536" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM06" data-count="0"/>
+<rect x="600" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM07" data-count="0"/>
+<rect x="664" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM08" data-count="0"/>
+<rect x="728" y="216" width="62" height="38" fill="#f1f5f9" data-stride="denial_of_service" data-owasp="LLM09" data-count="0"/>
+<rect x="792" y="216" width="62" height="38" fill="#bfdbfe" data-stride="denial_of_service" data-owasp="LLM10" data-count="1"/>
+<text x="823" y="241" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<text x="206" y="281" font-size="13" text-anchor="end" fill="#0f172a">Elevation of privilege</text>
+<rect x="216" y="256" width="62" height="38" fill="#1d4ed8" data-stride="elevation_of_privilege" data-owasp="LLM01" data-count="3"/>
+<text x="247" y="281" font-size="14" text-anchor="middle" fill="#ffffff">3</text>
+<rect x="280" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM02" data-count="0"/>
+<rect x="344" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM03" data-count="0"/>
+<rect x="408" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM04" data-count="0"/>
+<rect x="472" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM05" data-count="0"/>
+<rect x="536" y="256" width="62" height="38" fill="#bfdbfe" data-stride="elevation_of_privilege" data-owasp="LLM06" data-count="1"/>
+<text x="567" y="281" font-size="14" text-anchor="middle" fill="#0f172a">1</text>
+<rect x="600" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM07" data-count="0"/>
+<rect x="664" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM08" data-count="0"/>
+<rect x="728" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM09" data-count="0"/>
+<rect x="792" y="256" width="62" height="38" fill="#f1f5f9" data-stride="elevation_of_privilege" data-owasp="LLM10" data-count="0"/>
+<text x="16" y="328" font-size="12" fill="#0f172a">LLM01  Prompt Injection</text>
+<text x="16" y="348" font-size="12" fill="#0f172a">LLM02  Sensitive Information Disclosure</text>
+<text x="16" y="368" font-size="12" fill="#0f172a">LLM03  Supply Chain</text>
+<text x="16" y="388" font-size="12" fill="#0f172a">LLM04  Data and Model Poisoning</text>
+<text x="16" y="408" font-size="12" fill="#0f172a">LLM05  Improper Output Handling</text>
+<text x="16" y="428" font-size="12" fill="#0f172a">LLM06  Excessive Agency</text>
+<text x="16" y="448" font-size="12" fill="#0f172a">LLM07  System Prompt Leakage</text>
+<text x="16" y="468" font-size="12" fill="#0f172a">LLM08  Vector and Embedding Weaknesses</text>
+<text x="16" y="488" font-size="12" fill="#0f172a">LLM09  Misinformation</text>
+<text x="16" y="508" font-size="12" fill="#0f172a">LLM10  Unbounded Consumption</text>
+<text x="16" y="552" font-size="11" fill="#334155">OWASP LLM Top 10 2025. ATLAS release 2026.09 techniques are listed in threat_map.py and are not drawn here.</text>
+<text x="16" y="568" font-size="11" fill="#334155">A blank cell means no suite maps to that pair, not that the pair is safe.</text>
+</svg>
