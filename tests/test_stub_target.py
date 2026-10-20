@@ -90,7 +90,7 @@ def test_bad_requests_are_rejected_before_any_logic(
 ) -> None:
     client = TestClient(app_factory())
     assert client.post("/query", json={"question": "x", "top_k": 0}).status_code == 422
-    assert client.post("/query", json={"question": "x", "top_k": 11}).status_code == 422
+    assert client.post("/query", json={"question": "x", "top_k": 21}).status_code == 422
     assert client.post("/query", json={"question": "x" * 2001}).status_code == 422
     assert client.post("/query", json={}).status_code == 422
 

@@ -1,0 +1,33 @@
+{
+  "note": "Hand-copied from Repo 1 at the commit below. Nothing refreshes this file. It checks the stub against this snapshot, not against Repo 1 as it is today.",
+  "source": {
+    "repo": "fazle-enterprise-ai-platform",
+    "commit": "715a93348caa736f4d53ba760fce318cdd741614",
+    "models_file": "packages/rag-engine/src/rag_engine/routers/query.py",
+    "limits_file": "packages/rag-engine/src/rag_engine/upload_limits.py"
+  },
+  "endpoint": {"method": "POST", "path": "/query"},
+  "request": {
+    "fields": {"question": "string", "top_k": "integer"},
+    "question_max_length": 2000,
+    "top_k_minimum": 1,
+    "top_k_maximum": 20,
+    "top_k_default": 5
+  },
+  "citation_fields": {
+    "chunk_id": "uuid",
+    "document_id": "uuid",
+    "heading_path": "array<string>",
+    "text": "string"
+  },
+  "response_fields": {
+    "answer": "string",
+    "citations": "array<Citation>",
+    "retrieved_context": "array<Citation>",
+    "retrieved_but_uncited_count": "integer",
+    "flagged": "boolean",
+    "flag_reasons": "array<string>"
+  },
+  "repo1_flag_reasons": ["output_pii", "no_citations", "low_grounding"],
+  "stub_only_flag_reasons": ["output_leak"]
+}

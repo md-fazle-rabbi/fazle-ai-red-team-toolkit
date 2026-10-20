@@ -54,12 +54,16 @@ firewall, a canary scrub and PII redaction. Every value is synthetic. Reasoning 
 Use `hardened_app` for the other mode. Run it on localhost only: it is vulnerable on
 purpose, so never pass `--host 0.0.0.0`.
 
+The stub's request and response shape is pinned by tests against
+`contracts/repo1-query-contract.json`, a snapshot of Repo 1's `POST /query` models copied
+by hand at a named commit.
+
 ## Gated HTTP runner
 `redteam_toolkit.runner.send_probe` is the only function in this toolkit allowed to make
 an outbound request. It calls `RoEGate.permit` first; if that refuses, nothing is sent.
 It returns a `ProbeResult` (status code, body, elapsed time, and an error string on a
 connection failure) and makes no judgement about whether the response is a pass or a
-fail — that is a suite's job, and no suite exists yet. Reasoning is in
+fail. That is a suite's job, and no suite exists yet. Reasoning is in
 [ADR-008](docs/adr/ADR-008-gated-http-runner.md).
 
 Wired together against the stub, with the stub running on port 8010:
@@ -99,8 +103,9 @@ uv run pytest --cov --cov-fail-under=90
 - Hardened mode is imperfect on purpose. A spaced-out injection such as `i.g.n.o.r.e`
   passes its firewall, and only the output scrub stops the leak. Nothing measures a bypass
   rate against it yet.
-- The stub's response fields are copied by hand from Repo 1. Nothing checks that they
-  still match.
+- The stub is checked against `contracts/repo1-query-contract.json`, a snapshot copied by
+  hand from Repo 1 at commit 715a933. That catches the stub drifting from the snapshot.
+  Nothing refreshes the snapshot, so it cannot catch Repo 1 changing after that commit.
 - The gate checks what the file says is authorized. It cannot tell whether the signature
   behind the file is genuine. For a client engagement the file records the SHA-256 of the
   signed document, and a person still has to check that document.
