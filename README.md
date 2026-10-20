@@ -112,6 +112,9 @@ result = send_probe(
 `RoEGate` does not expose the limits, so read them from the same loaded file the gate
 was built from.
 
+## Threat map
+Each suite is mapped to STRIDE, MITRE ATLAS (release 2026.09) and the OWASP LLM Top 10 (2025 edition) in `src/redteam_toolkit/threat_map.py`. A test fails if a suite the gate allows has no mapping. The pairings are my judgement, and the entries say where the fit is partial. Reasoning is in [ADR-011](docs/adr/ADR-011-threat-map-as-code.md).
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 

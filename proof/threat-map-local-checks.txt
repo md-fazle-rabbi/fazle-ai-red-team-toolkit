@@ -1,0 +1,32 @@
+All checks passed!
+29 files already formatted
+Success: no issues found in 18 source files
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/fazle-rabbi/Fazle-Rabbi/Projects/AI Engineer/fazle-ai-red-team-toolkit
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collected 160 items
+
+tests/test_cli.py .........                                              [  5%]
+tests/test_examples.py ...                                               [  7%]
+tests/test_limits.py ..........                                          [ 13%]
+tests/test_package.py ...                                                [ 15%]
+tests/test_roe.py ...................................................... [ 49%]
+...................................                                      [ 71%]
+tests/test_runner.py ............                                        [ 78%]
+tests/test_stub_contract.py ......                                       [ 82%]
+tests/test_stub_target.py ...................                            [ 94%]
+tests/test_threat_map.py .........                                       [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name    Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------
+TOTAL     444      0    104      0   100%
+
+7 files skipped due to complete coverage.
+Required test coverage of 90% reached. Total coverage: 100.00%
+============================= 160 passed in 2.14s ==============================

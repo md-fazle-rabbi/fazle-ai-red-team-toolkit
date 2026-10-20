@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-20
+- Added `redteam_toolkit/threat_map.py`, mapping every suite the gate allows to STRIDE, MITRE ATLAS (release 2026.09) and the OWASP LLM Top 10 2025, with tests that fail when a suite is left unmapped. Gaps (bias, image-carried injection, evasion and extraction) are stated in the data. Added ADR-011.
 - Added a `workflow-audit` job to CI that runs zizmor 1.30.1 on the workflow files in offline, pedantic mode. It fails on unpinned actions, injectable expressions and undocumented or excess permissions. zizmor is pinned to a release about six weeks old.
 - Tightened `ci.yml` to pass zizmor in pedantic mode: the Python version is read from a shell variable instead of being expanded into the command, every job has a name, and each permission carries a reason.
 - Added `docs/adr/ADR-010` recording why the Trivy scan from the plan was left out for now: the repository has no container image or infrastructure files, and the Trivy GitHub Actions were compromised in March 2026.
