@@ -17,32 +17,36 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
-# Why httpx2: the runner sends the gated HTTP request. httpx2 is the maintained
-# successor httpx itself points to (see stub-target step); it moves from dev to
-# here because the runner needs it outside of tests too.
-dependencies = ["httpx2>=2.13.1,<3", "pydantic>=2.14.1,<3"]
+# Why: pydantic validates the Rules of Engagement file. httpx2 sends the gated HTTP
+# request; it is the maintained successor httpx itself points to. fastapi and uvicorn
+# serve the local stub target and the gated proxy, both of which ship in the package.
+# garak, PyRIT, DeepTeam and IBM ART are large and each pins its own neighbours, so
+# they stay out of this dependency set and run from separate environments.
+# fastapi is held below 0.144 because that release came out on the day it was added.
+dependencies = [
+    "fastapi>=0.143.0,<0.144",
+    "httpx2>=2.13.1,<3",
+    "pydantic>=2.14.1,<3",
+    "uvicorn>=0.54.0,<1",
+]
 
 [project.scripts]
 redteam-toolkit = "redteam_toolkit.cli:main"
 
 [tool.uv]
 # Why: same pin as the target repository, so one uv install works for both.
-required-version = "==0.12.21"
 
 [tool.uv.build-backend]
 module-name = "redteam_toolkit"
 
 [dependency-groups]
-# Why: fastapi and uvicorn serve the local stub target only, which is a test fixture.
-# fastapi is held below 0.144 because that release came out on the day this was added.
-# httpx2 moved to the main dependencies; the runner needs it outside of tests too.
+# Why: tools for checking the code only. Everything the package imports at run time is
+# in [project] dependencies above.
 dev = [
-    "fastapi>=0.143.0,<0.144",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.1",
-    "uvicorn>=0.54.0,<1",
 ]
 
 [tool.ruff]

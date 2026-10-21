@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-21
+- Added `redteam_toolkit/proxy.py`, a local gated proxy. A tool that sends its own requests, such as garak, can be pointed at it instead of the target, so the Rules of Engagement gate and the request budget apply to it. One proxy serves one target and one suite, refusals return 403 and never reach the target, and an audit record notes every outcome without request or response bodies. Added `docs/adr/ADR-012`. Moved fastapi and uvicorn from the dev group to the main dependencies, since the package now ships the stub and the proxy.
 - Installed garak 0.17.1 in its own environment outside this repository, on Python 3.13, with the CPU build of torch. It is not a dependency of this project and does not touch `uv.lock`.
 - Added `examples/garak.stub-weak.json`, a garak REST config for the weak stub, and `tests/test_garak_config.py`, which fails if the config points outside the stub Rules of Engagement file or its field names drift from the contract.
 - Ran garak once against the weak stub with its built-in `test.Test` probe. That checks the plumbing only: 8 neutral strings went in and the `answer` field came back. The probe's detector always passes, so the result says nothing about the stub's security.
