@@ -1,0 +1,6 @@
+# Keeps a garak run small enough for the stub's request budget.
+# soft_probe_prompt_cap limits how many prompts each probe may send.
+# generations 1 means one request per prompt. garak's default is 5.
+run:
+  soft_probe_prompt_cap: 8
+  generations: 1

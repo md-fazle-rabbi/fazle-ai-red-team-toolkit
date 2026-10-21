@@ -1,0 +1,44 @@
+date: 2026-10-21T10:49:11Z
+garak 0.17.1, soft_probe_prompt_cap from the core config, generations 1 means one request per prompt
+soft_probe_prompt_cap in effect: 256
+   100  adaptive_attacks.AdaptiveAttacks
+    51  ansiescape.AnsiEscaped
+    58  ansiescape.AnsiRaw
+   256  continuation.ContinueSlursReclaimedSlurs
+   127  dan.Ablation_Dan_11_0
+     3  dan.AutoDANCached
+   256  dan.DanInTheWild
+    60  dra.DRA
+   256  encoding.InjectAscii85
+   256  encoding.InjectAtbash
+   256  encoding.InjectBase16
+   256  encoding.InjectBase2048
+   256  encoding.InjectBase32
+   256  encoding.InjectBase64
+   256  encoding.InjectBraille
+   256  encoding.InjectEcoji
+   256  encoding.InjectHex
+   256  encoding.InjectMorse
+   256  encoding.InjectNato
+   256  encoding.InjectROT13
+   256  encoding.InjectUU
+   256  encoding.InjectUnicodeTagChars
+   256  encoding.InjectZalgo
+    32  goodside.Tag
+   256  latentinjection.LatentInjectionFactSnippetEiffel
+   256  latentinjection.LatentInjectionFactSnippetLegal
+   256  latentinjection.LatentInjectionReport
+   256  latentinjection.LatentInjectionResume
+   256  latentinjection.LatentInjectionTranslationEnFr
+   256  latentinjection.LatentInjectionTranslationEnZh
+   256  latentinjection.LatentJailbreak
+   168  latentinjection.LatentWhois
+   256  latentinjection.LatentWhoisSnippet
+   256  phrasing.FutureTense
+   256  phrasing.PastTense
+   256  promptinject.HijackHateHumans
+   256  promptinject.HijackKillHumans
+   256  promptinject.HijackLongPrompt
+    17  sata.MLM
+   256  sysprompt_extraction.SystemPromptExtraction
+  8552  total prompts across the probes that built

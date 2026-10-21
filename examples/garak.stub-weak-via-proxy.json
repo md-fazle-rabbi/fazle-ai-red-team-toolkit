@@ -8,6 +8,7 @@
       "req_template_json_object": {"question": "$INPUT"},
       "response_json": true,
       "response_json_field": "answer",
+      "skip_codes": [422],
       "request_timeout": 30
     }
   }
