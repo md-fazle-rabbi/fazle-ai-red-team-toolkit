@@ -1,6 +1,6 @@
 # ADR-009: A request budget, opt in and sequential
 
-Status: Accepted (2026-10-20)
+Status: Accepted (2026-10-20), amended 2026-10-21
 
 ## Context
 The Rules of Engagement file sets `requests_per_minute`, `total_requests` and `concurrency`. Until now the code only checked that those numbers sit under fixed ceilings. Nothing stopped a suite from sending faster or more often than the file allows, and the README listed that as a known limitation. Repo 1's embedding free tier allows 3 requests per minute, so a manual run against it needs the rate to be real, not just written down.
@@ -18,3 +18,20 @@ The Rules of Engagement file sets `requests_per_minute`, `total_requests` and `c
 - Negative: the count lives in memory, so two runs in a row each get the full total. Persisting it needs a place to write that state, and that is not decided.
 - Negative: not thread safe, and `concurrency` is not enforced.
 - Risk and mitigation: a suite could forget to pass a budget. Mitigation: the README says so, and a later suite runner should build the gate and the budget from one loaded file so they cannot be separated.
+
+## Amendment (2026-10-21)
+The gated proxy (ADR-012) serves requests on several threads, so two of the options
+rejected above are now needed, and both have tests.
+
+- `RequestBudget.acquire` holds a lock, so the count and the spacing stay right when
+  several threads call it. A test starts 20 threads against a total of 5 and requires
+  exactly 5 to succeed.
+- The budget still does not enforce `concurrency`, because it never sees a request
+  finish. The proxy holds a semaphore with that many slots around each send. A test
+  with a slow target requires that no more than the file's limit are ever in flight.
+- A caller that sends from several threads without the proxy has to hold its own
+  slots.
+
+The title's "sequential" and the Negative line above describe the original decision
+and no longer describe the code. Spacing is still even, and the count still lives in
+memory and starts at zero in every process.

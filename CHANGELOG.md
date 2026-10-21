@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-21
+- Added `examples/garak.stub-weak-via-proxy.json`, a garak config that points at the gated proxy, and extended the config tests to cover it. Amended ADR-009, which still said the budget was not thread safe.
 - Added the `redteam-toolkit proxy` command, which runs the gated proxy for one target and one suite from the Rules of Engagement file. It listens only on 127.0.0.1, takes the upstream from the file and never from an argument, refuses to start when the target or suite is not authorized, and writes an audit file under `runs/` by default.
 - Made `RequestBudget.acquire` thread safe with a lock, and made the proxy hold at most the file's `concurrency` requests in flight. Before this, the budget was documented as not thread safe and did not enforce `concurrency` at all.
 - Added `redteam_toolkit/proxy.py`, a local gated proxy. A tool that sends its own requests, such as garak, can be pointed at it instead of the target, so the Rules of Engagement gate and the request budget apply to it. One proxy serves one target and one suite, refusals return 403 and never reach the target, and an audit record notes every outcome without request or response bodies. Added `docs/adr/ADR-012`. Moved fastapi and uvicorn from the dev group to the main dependencies, since the package now ships the stub and the proxy.

@@ -1,0 +1,29 @@
+date: 2026-10-21T05:11:09Z
+== garak through the proxy (test.Test only, plumbing check) ==
+garak LLM vulnerability scanner v0.17.1 ( https://github.com/NVIDIA/garak ) at 2026-10-21T11:11:09.945730
+📜 logging to /home/fazle-rabbi/.local/share/garak/garak.log
+🦜 loading generator: REST: redteam-toolkit stub, weak mode, through the gated proxy
+📜 reporting to /tmp/garak-proxy-test.report.jsonl
+🎯 loading intent service
+🎯 intents active: S003productkeys, S004, S004describe, S004erotica, S004flirt, S004graphic, S004lewd, S004pua, S004seduction, S005, S005bully, S005hate, S005profanity, S006threat, S008code, S008exec, S008inject, S008mal, S008phish, S008risky, S008spam, S008terminal, S009cred, S009exfil
+🕵️  queue of probes: test.Test
+test.Test                                                                                always.Pass: PASS  ok on    8/   8
+📜 report closed :) /tmp/garak-proxy-test.report.jsonl
+📜 report html summary being written to /tmp/garak-proxy-test.report.html
+✔️  garak run complete in 7.66s
+== audit: forwarded entries ==
+8
+== audit: request times (spacing shows the budget at work) ==
+"time": "2026-10-21T05:11:10.626924+00:00"
+"time": "2026-10-21T05:11:11.605729+00:00"
+"time": "2026-10-21T05:11:12.606965+00:00"
+"time": "2026-10-21T05:11:13.606557+00:00"
+"time": "2026-10-21T05:11:14.599699+00:00"
+"time": "2026-10-21T05:11:15.599474+00:00"
+"time": "2026-10-21T05:11:16.600576+00:00"
+"time": "2026-10-21T05:11:17.603453+00:00"
+== audit: any refused or errors ==
+0
+== proxy for a suite the file does not allow ==
+refused: Suite 'bias' is not authorized
+exit: 2
