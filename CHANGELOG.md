@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### 2026-10-21
+- Installed garak 0.17.1 in its own environment outside this repository, on Python 3.13, with the CPU build of torch. It is not a dependency of this project and does not touch `uv.lock`.
+- Added `examples/garak.stub-weak.json`, a garak REST config for the weak stub, and `tests/test_garak_config.py`, which fails if the config points outside the stub Rules of Engagement file or its field names drift from the contract.
+- Ran garak once against the weak stub with its built-in `test.Test` probe. That checks the plumbing only: 8 neutral strings went in and the `answer` field came back. The probe's detector always passes, so the result says nothing about the stub's security.
+- Fixed tests that read the real clock against example files with fixed dates. They would have failed from 2026-10-25 with no code change. They now use a fixed moment inside the windows, or a window built around the current time.
+
 ### 2026-10-20
 - Added `redteam_toolkit/heat_map.py`, which draws the threat map as an SVG grid of STRIDE categories against OWASP LLM Top 10 entries, counting how many suites map to each pair. The committed `docs/threat-map.svg` is checked by a test, so it cannot go stale. ATLAS techniques are not drawn yet.
 - Added `redteam_toolkit/threat_map.py`, mapping every suite the gate allows to STRIDE, MITRE ATLAS (release 2026.09) and the OWASP LLM Top 10 2025, with tests that fail when a suite is left unmapped. Gaps (bias, image-carried injection, evasion and extraction) are stated in the data. Added ADR-011.

@@ -162,9 +162,14 @@ uv run pytest --cov --cov-fail-under=90
   which is wasteful for a suite that sends many requests.
 - The two targets in `examples/roe.stub-local.toml` share one address. The gate cannot
   tell which stub mode is actually running on port 8010; that is on the person running it.
-- garak, PyRIT, DeepTeam and IBM ART are not installed yet. IBM ART's package metadata
-  lists Python 3.10 to 3.12 and not 3.13, so it is unverified on the interpreter this
+- PyRIT, DeepTeam and IBM ART are not installed yet. IBM ART's package metadata lists
+  Python 3.10 to 3.12 and not 3.13, so it is unverified on the interpreter this
   repository uses.
+- garak 0.17.1 is installed in its own environment outside this repository. It has run
+  once against the weak stub with a plumbing probe only. No attack run has happened.
+- garak sends its own requests, so the Rules of Engagement gate, window and request
+  budget do not bind it at run time. Running the gate check by hand first is a habit,
+  not enforcement.
 - CI runs lint, type check, tests with a coverage gate, pip-audit, CodeQL and zizmor on
   the workflow files. zizmor runs offline, so its audits that call the GitHub API (for
   example checking that a pinned commit really belongs to the action's repository) do
