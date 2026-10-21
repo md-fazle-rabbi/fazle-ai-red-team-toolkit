@@ -1,0 +1,38 @@
+All checks passed!
+39 files already formatted
+Success: no issues found in 27 source files
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/fazle-rabbi/Fazle-Rabbi/Projects/AI Engineer/fazle-ai-red-team-toolkit
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collected 219 items
+
+tests/test_cli.py .........                                              [  4%]
+tests/test_cli_proxy.py .........                                        [  8%]
+tests/test_concurrency.py ..                                             [  9%]
+tests/test_examples.py ...                                               [ 10%]
+tests/test_garak_config.py ......                                        [ 13%]
+tests/test_heat_map.py .......                                           [ 16%]
+tests/test_limits.py ..........                                          [ 21%]
+tests/test_package.py ...                                                [ 22%]
+tests/test_proxy.py .............                                        [ 28%]
+tests/test_roe.py ...................................................... [ 52%]
+...................................                                      [ 68%]
+tests/test_runner.py ............                                        [ 74%]
+tests/test_scoring.py ......................                             [ 84%]
+tests/test_stub_contract.py ......                                       [ 87%]
+tests/test_stub_target.py ...................                            [ 95%]
+tests/test_threat_map.py .........                                       [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name    Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------
+TOTAL     653      0    150      0   100%
+
+10 files skipped due to complete coverage.
+Required test coverage of 90% reached. Total coverage: 100.00%
+============================= 219 passed in 3.40s ==============================
