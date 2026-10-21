@@ -1,0 +1,10 @@
+== proxy startup ==
+proxy: engagement=stub-local-selftest target=stub-weak-local suite=prompt_injection upstream=http://127.0.0.1:8010 listen=http://127.0.0.1:8100 audit=/tmp/proxy-audit.jsonl
+== allowed path, expect 200 ==
+200
+== path outside the file, expect 403 ==
+{"refused":"Request path is not in allowed_paths"}
+403
+== audit file ==
+{"detail": "", "outcome": "forwarded", "path": "query", "status_code": 200, "suite": "prompt_injection", "target_id": "stub-weak-local", "time": "2026-10-21T05:07:00.874151+00:00"}
+{"detail": "Request path is not in allowed_paths", "outcome": "refused", "path": "admin", "status_code": 403, "suite": "prompt_injection", "target_id": "stub-weak-local", "time": "2026-10-21T05:07:00.884466+00:00"}

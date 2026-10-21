@@ -7,6 +7,7 @@ to an audit record.
 
 One proxy serves one target and one suite, fixed when it is created. The tool
 cannot choose a different suite or a different host by changing its request.
+With a budget, at most the file's concurrency requests are in flight at once.
 Request and response bodies are never written to the audit record, because they
 can hold personal data or secrets.
 """
@@ -14,7 +15,9 @@ can hold personal data or secrets.
 from __future__ import annotations
 
 import json
+import threading
 from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -66,6 +69,9 @@ def create_proxy_app(
 ) -> FastAPI:
     app = FastAPI(title="redteam-toolkit gated proxy")
     base = upstream_base.rstrip("/")
+    slots = (
+        threading.BoundedSemaphore(budget.concurrency) if budget is not None else None
+    )
 
     def record(path: str, outcome: str, status: int | None, detail: str) -> None:
         if audit is not None:
@@ -83,16 +89,20 @@ def create_proxy_app(
 
     @app.post("/{path:path}")
     def forward(path: str, body: Annotated[dict[str, Any], Body()]) -> Response:
+        guard: AbstractContextManager[object] = (
+            slots if slots is not None else nullcontext()
+        )
         try:
-            result = send_probe(
-                gate,
-                target_id=target_id,
-                suite=suite,
-                url=f"{base}/{path}",
-                json_body=body,
-                client=client,
-                budget=budget,
-            )
+            with guard:
+                result = send_probe(
+                    gate,
+                    target_id=target_id,
+                    suite=suite,
+                    url=f"{base}/{path}",
+                    json_body=body,
+                    client=client,
+                    budget=budget,
+                )
         except RoEViolationError as exc:
             record(path, "refused", 403, str(exc))
             return JSONResponse(status_code=403, content={"refused": str(exc)})

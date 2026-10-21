@@ -4,12 +4,15 @@ RoEGate.permit says whether one request is in scope. It says nothing about how f
 or how many requests are sent. RequestBudget does that part: it counts requests
 against total_requests and spaces them out to stay under requests_per_minute.
 
-Everything here is sequential and lives in memory. It is not thread safe, and the
-count starts at zero in every new process. The file's concurrency limit is exposed as
-a property for a future concurrent runner to read. This class does not enforce it,
-because a sequential caller never has more than one request in flight.
+Everything here lives in memory, and the count starts at zero in every new process.
+acquire is safe to call from several threads: a lock makes each caller take its turn,
+so the count and the spacing stay right. The file's concurrency limit is exposed as a
+property. This class does not enforce it, because it never sees a request finish. A
+caller that sends from several threads has to hold that many slots itself, as the
+gated proxy does.
 """
 
+import threading
 import time
 from collections.abc import Callable
 
@@ -37,6 +40,7 @@ class RequestBudget:
         self._sleep = sleep
         self._used = 0
         self._last: float | None = None
+        self._lock = threading.Lock()
 
     @property
     def used(self) -> int:
@@ -53,15 +57,16 @@ class RequestBudget:
         Even spacing, not bursts: a target with a free tier limit sees the rate the
         file asked for, with no spike at the start of each minute.
         """
-        if self._used >= self._limits.total_requests:
-            raise BudgetExhaustedError(
-                f"The file authorizes {self._limits.total_requests} requests "
-                "and all of them are used"
-            )
-        if self._last is not None:
-            interval = SECONDS_PER_MINUTE / self._limits.requests_per_minute
-            wait = self._last + interval - self._clock()
-            if wait > 0:
-                self._sleep(wait)
-        self._last = self._clock()
-        self._used += 1
+        with self._lock:
+            if self._used >= self._limits.total_requests:
+                raise BudgetExhaustedError(
+                    f"The file authorizes {self._limits.total_requests} requests "
+                    "and all of them are used"
+                )
+            if self._last is not None:
+                interval = SECONDS_PER_MINUTE / self._limits.requests_per_minute
+                wait = self._last + interval - self._clock()
+                if wait > 0:
+                    self._sleep(wait)
+            self._last = self._clock()
+            self._used += 1

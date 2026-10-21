@@ -6,11 +6,33 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from redteam_toolkit.roe import SUITES, RoEError, RoEGate, load_roe
+import uvicorn
+
+from redteam_toolkit.limits import RequestBudget
+from redteam_toolkit.proxy import JsonlAudit, create_proxy_app
+from redteam_toolkit.roe import SUITES, LoadedRoE, RoEError, RoEGate, Target, load_roe
 
 EXIT_OK = 0
 EXIT_REFUSED = 2
 ENV_VAR = "REDTEAM_ROE_PATH"
+# Why: the proxy forwards requests for whoever can reach it, so it only ever listens
+# on this machine. There is deliberately no option to change the address.
+PROXY_HOST = "127.0.0.1"
+DEFAULT_PROXY_PORT = 8100
+MIN_PORT = 1024
+MAX_PORT = 65535
+
+
+def _port(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a number") from exc
+    if not MIN_PORT <= value <= MAX_PORT:
+        raise argparse.ArgumentTypeError(
+            f"port must be between {MIN_PORT} and {MAX_PORT}"
+        )
+    return value
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -41,6 +63,24 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--target", required=True, help="target id from the file")
     check.add_argument("--suite", required=True, choices=SUITES)
     check.add_argument("--url", help="full request URL to check against the target")
+
+    proxy = sub.add_parser(
+        "proxy",
+        parents=[common],
+        help="run a local gated proxy for tools that send their own requests",
+    )
+    proxy.add_argument("--target", required=True, help="target id from the file")
+    proxy.add_argument("--suite", required=True, choices=SUITES)
+    proxy.add_argument(
+        "--port",
+        type=_port,
+        default=DEFAULT_PROXY_PORT,
+        help=f"local port to listen on (default: {DEFAULT_PROXY_PORT})",
+    )
+    proxy.add_argument(
+        "--audit",
+        help="audit file to append to (default: a file under runs/)",
+    )
     return parser
 
 
@@ -51,16 +91,52 @@ def _resolve_path(arg: str | None) -> Path | None:
     return Path(raw) if raw else None
 
 
+def _serve_proxy(
+    loaded: LoadedRoE, gate: RoEGate, target: Target, args: argparse.Namespace
+) -> None:
+    # Why: the upstream is the target's base_url from the file, never an argument. The
+    # proxy cannot be pointed anywhere the file does not authorize.
+    audit_path = (
+        Path(args.audit)
+        if args.audit
+        else Path("runs") / f"{gate.engagement_id}-{target.id}-{args.suite}-audit.jsonl"
+    )
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    app = create_proxy_app(
+        gate,
+        target_id=target.id,
+        suite=args.suite,
+        upstream_base=target.base_url,
+        budget=RequestBudget(loaded.roe.limits),
+        audit=JsonlAudit(audit_path),
+    )
+    sys.stdout.write(
+        f"proxy: engagement={gate.engagement_id} target={target.id} "
+        f"suite={args.suite} upstream={target.base_url} "
+        f"listen=http://{PROXY_HOST}:{args.port} audit={audit_path}\n"
+    )
+    sys.stdout.flush()
+    uvicorn.run(app, host=PROXY_HOST, port=args.port, log_level="warning")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        gate = RoEGate(load_roe(_resolve_path(args.file)))
-        if args.command == "check":
-            gate.permit(target_id=args.target, suite=args.suite, url=args.url)
+        loaded = load_roe(_resolve_path(args.file))
+        gate = RoEGate(loaded)
+        target = None
+        if args.command in {"check", "proxy"}:
+            target = gate.permit(
+                target_id=args.target,
+                suite=args.suite,
+                url=getattr(args, "url", None),
+            )
     except RoEError as exc:
         sys.stderr.write(f"refused: {exc}\n")
         return EXIT_REFUSED
-    if args.command == "check":
+    if args.command == "proxy" and target is not None:
+        _serve_proxy(loaded, gate, target, args)
+    elif args.command == "check":
         sys.stdout.write(
             f"permitted: engagement={gate.engagement_id} target={args.target} "
             f"suite={args.suite} roe_sha256={gate.sha256}\n"

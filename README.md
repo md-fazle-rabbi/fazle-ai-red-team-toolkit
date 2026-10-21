@@ -120,7 +120,7 @@ Each suite is mapped to STRIDE, MITRE ATLAS (release 2026.09) and the OWASP LLM 
 Regenerate it with `uv run python -c "import sys; from redteam_toolkit.heat_map import render_heat_map_svg as r; sys.stdout.write(r())" > docs/threat-map.svg`. A test fails when the committed file is out of date. The picture shows STRIDE against OWASP only; ATLAS techniques are in `threat_map.py` and are not drawn.
 
 ## Gated proxy
-Tools that send their own requests, such as garak, skip `send_probe` and so skip the gate. `redteam_toolkit.proxy.create_proxy_app` builds a local proxy for one target and one suite: a tool pointed at it is checked by the gate and the request budget, refusals return 403 and never reach the target, and every outcome is audited without bodies. It only binds a tool that is actually pointed at it, and it must run on 127.0.0.1. There is no command to start it yet. Reasoning is in [ADR-012](docs/adr/ADR-012-gated-proxy-for-third-party-tools.md).
+Tools that send their own requests, such as garak, skip `send_probe` and so skip the gate. `redteam_toolkit.proxy.create_proxy_app` builds a local proxy for one target and one suite: a tool pointed at it is checked by the gate and the request budget, refusals return 403 and never reach the target, and every outcome is audited without bodies. It only binds a tool that is actually pointed at it, and it must run on 127.0.0.1. Start it with `redteam-toolkit proxy --target ID --suite NAME`; it takes the upstream address from the file, listens only on 127.0.0.1, and writes an audit file under `runs/`. Reasoning is in [ADR-012](docs/adr/ADR-012-gated-proxy-for-third-party-tools.md).
 
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
