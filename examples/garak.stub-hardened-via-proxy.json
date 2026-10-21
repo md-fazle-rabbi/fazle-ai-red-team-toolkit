@@ -1,0 +1,15 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "redteam-toolkit stub, hardened mode, through the gated proxy",
+      "uri": "http://127.0.0.1:8100/query",
+      "method": "post",
+      "headers": {"Content-Type": "application/json"},
+      "req_template_json_object": {"question": "$INPUT"},
+      "response_json": true,
+      "response_json_field": "answer",
+      "skip_codes": [400, 422],
+      "request_timeout": 30
+    }
+  }
+}
