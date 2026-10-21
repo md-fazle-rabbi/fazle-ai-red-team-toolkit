@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-21
+- Added the `redteam-toolkit score` command. It scores the answers in a garak report for a canary leak (`--canary`, repeatable) and for personal data, prints a table, and exits 0 when nothing is flagged, 1 when a detector flags an answer, and 3 when the report cannot be scored. A report with no answered attempts exits 3, so it never looks clean. It sends nothing and needs no Rules of Engagement file.
 - Added `redteam_toolkit/scoring.py`, the toolkit's own scoring layer. It reads the answers from a garak report, keeps the final entry for each attempt, and scores each answer for a canary leak and for personal data (an email or a phone number). Skipped attempts are counted apart, and the prompt text is never copied into a result. Its positive controls are the stub's own weak and hardened answers.
 - Added `examples/garak.stub-weak-via-proxy.json`, a garak config that points at the gated proxy, and extended the config tests to cover it. Amended ADR-009, which still said the budget was not thread safe.
 - Added the `redteam-toolkit proxy` command, which runs the gated proxy for one target and one suite from the Rules of Engagement file. It listens only on 127.0.0.1, takes the upstream from the file and never from an argument, refuses to start when the target or suite is not authorized, and writes an audit file under `runs/` by default.

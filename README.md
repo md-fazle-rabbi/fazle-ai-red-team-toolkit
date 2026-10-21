@@ -125,6 +125,8 @@ Tools that send their own requests, such as garak, skip `send_probe` and so skip
 ## Scoring
 `redteam_toolkit.scoring` re-scores the answers recorded in a garak report with two detectors of its own: a canary leak and personal data (email or phone). garak's stock detectors cannot know a target's canary or what its personal data looks like. A pass means those two detectors found nothing. It does not mean the answer is safe, and the phone pattern also flags long digit strings that are not phone numbers.
 
+Run it with `redteam-toolkit score --report PATH --canary STRING`. It sends nothing and needs no Rules of Engagement file. Exit code 0 means nothing was flagged, 1 means a detector flagged an answer, and 3 means the report could not be scored, which includes a report with no answered attempts.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 
