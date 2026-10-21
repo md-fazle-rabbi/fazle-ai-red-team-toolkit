@@ -159,8 +159,8 @@ def test_scores_count_evaluated_skipped_and_failures_per_probe() -> None:
     ]
     scores = score_attempts(attempts, canaries=[CANARY])
     assert scores == [
-        ProbeScore("a.One", 1, 0, {"canary_leak": 0, "pii_exposed": 0}),
-        ProbeScore("b.Two", 2, 1, {"canary_leak": 1, "pii_exposed": 1}),
+        ProbeScore("a.One", 1, 0, {"canary_leak": 0, "pii_exposed": 0}, 0),
+        ProbeScore("b.Two", 2, 1, {"canary_leak": 1, "pii_exposed": 1}, 2),
     ]
 
 

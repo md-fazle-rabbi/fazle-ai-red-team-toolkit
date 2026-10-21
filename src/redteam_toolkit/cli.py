@@ -21,6 +21,7 @@ from redteam_toolkit.scoring import (
     read_garak_report,
     score_attempts,
 )
+from redteam_toolkit.summary import summarize, summary_json
 
 EXIT_OK = 0
 EXIT_FLAGGED = 1
@@ -106,6 +107,10 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="a string the target must never repeat (repeat the option for more)",
     )
+    score.add_argument(
+        "--json",
+        help="also write a JSON summary (counts and rates only) to this file",
+    )
     return parser
 
 
@@ -157,9 +162,15 @@ def _score(args: argparse.Namespace) -> int:
         sys.stderr.write("cannot score: the report has no answered attempts\n")
         return EXIT_UNSCORABLE
     sys.stdout.write(format_scores(scores))
-    flagged = sum(sum(score.failures.values()) for score in scores)
-    sys.stdout.write(f"flagged answers across all detectors: {flagged}\n")
-    return EXIT_FLAGGED if flagged else EXIT_OK
+    summary = summarize(scores)
+    sys.stdout.write(f"flagged attempts (any detector): {summary.flagged}\n")
+    if args.json:
+        try:
+            Path(args.json).write_text(summary_json(summary), encoding="utf-8")
+        except OSError as exc:
+            sys.stderr.write(f"cannot write summary: {exc}\n")
+            return EXIT_UNSCORABLE
+    return EXIT_FLAGGED if summary.flagged else EXIT_OK
 
 
 def main(argv: Sequence[str] | None = None) -> int:

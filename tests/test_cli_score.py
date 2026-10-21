@@ -35,7 +35,7 @@ def test_a_clean_report_exits_zero(
     assert main(["score", "--report", report]) == 0
     out = capsys.readouterr().out
     assert "a.One" in out
-    assert "flagged answers across all detectors: 0" in out
+    assert "flagged attempts (any detector): 0" in out
 
 
 def test_a_canary_in_an_answer_exits_one(
@@ -43,7 +43,7 @@ def test_a_canary_in_an_answer_exits_one(
 ) -> None:
     report = _report(tmp_path, [_row("a.One", "u1", [{"text": "note SECRET-1 here"}])])
     assert main(["score", "--report", report, "--canary", "SECRET-1"]) == 1
-    assert "flagged answers across all detectors: 1" in capsys.readouterr().out
+    assert "flagged attempts (any detector): 1" in capsys.readouterr().out
 
 
 def test_without_a_canary_option_only_personal_data_is_checked(tmp_path: Path) -> None:
@@ -90,3 +90,22 @@ def test_a_report_where_every_attempt_was_skipped_never_looks_clean(
         main(["score", "--report", _report(tmp_path, [_row("a.One", "u1", [None])])])
         == 3
     )
+
+
+def test_the_json_option_writes_a_summary_without_answer_text(tmp_path: Path) -> None:
+    report = _report(tmp_path, [_row("a.One", "u1", [{"text": "mail a@b.co"}])])
+    out = tmp_path / "summary.json"
+    assert main(["score", "--report", report, "--json", str(out)]) == 1
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["flagged"] == 1
+    assert data["evaluated"] == 1
+    assert "a@b.co" not in out.read_text(encoding="utf-8")
+
+
+def test_an_unwritable_summary_path_exits_three(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    report = _report(tmp_path, [_row("a.One", "u1", [{"text": "fine"}])])
+    bad = tmp_path / "missing-dir" / "s.json"
+    assert main(["score", "--report", report, "--json", str(bad)]) == 3
+    assert "cannot write summary" in capsys.readouterr().err

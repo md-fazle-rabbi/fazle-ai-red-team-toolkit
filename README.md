@@ -127,6 +127,8 @@ Tools that send their own requests, such as garak, skip `send_probe` and so skip
 
 Run it with `redteam-toolkit score --report PATH --canary STRING`. It sends nothing and needs no Rules of Engagement file. Exit code 0 means nothing was flagged, 1 means a detector flagged an answer, and 3 means the report could not be scored, which includes a report with no answered attempts.
 
+Add `--json PATH` to also write a summary of counts and flagged rates. The summary never contains prompt or answer text. The flagged rate is the share of answered attempts that either detector flagged. It is not a general bypass rate for the target.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 
