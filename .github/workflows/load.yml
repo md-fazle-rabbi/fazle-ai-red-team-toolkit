@@ -1,0 +1,83 @@
+name: Load gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Why: least privilege by default, same as ci.yml.
+permissions:
+  contents: read
+
+concurrency:
+  group: load-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.12.21"
+  PYTHON_VERSION: "3.13.15"
+  # Why: Locust goes into its own environment inside the job, not into uv.lock, so the
+  # repository's dependency tree stays small. The version is the one used for the
+  # first local measurement.
+  LOCUST_VERSION: "2.47.0"
+
+jobs:
+  load:
+    name: load gate
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install "$PYTHON_VERSION"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Install Locust in its own environment
+        run: |
+          uv venv --python "$PYTHON_VERSION" "$RUNNER_TEMP/locust-env"
+          uv pip install --python "$RUNNER_TEMP/locust-env/bin/python" "locust==$LOCUST_VERSION"
+
+      # Why: every request goes through the gated proxy, never straight at the stub. The
+      # example file's window is dated, so a window around now is written into a copy.
+      # Without that, this job would start failing on a date and not on a code change.
+      - name: Run the load test through the gated proxy
+        run: |
+          set -euo pipefail
+          start=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S+00:00)
+          end=$(date -u -d '1 day' +%Y-%m-%dT%H:%M:%S+00:00)
+          sed -e "s|^start = .*|start = ${start}|" -e "s|^end = .*|end = ${end}|" \
+            examples/roe.stub-load.toml > "$RUNNER_TEMP/roe.load.toml"
+          uv run uvicorn --factory redteam_toolkit.stub_target:weak_app \
+            --host 127.0.0.1 --port 8010 --log-level warning &
+          stub_pid=$!
+          uv run redteam-toolkit proxy --file "$RUNNER_TEMP/roe.load.toml" \
+            --target stub-weak-local --suite load \
+            --audit "$RUNNER_TEMP/load-audit.jsonl" &
+          proxy_pid=$!
+          trap 'kill "$stub_pid" "$proxy_pid" 2>/dev/null || true' EXIT
+          curl --silent --output /dev/null --retry 30 --retry-connrefused \
+            --retry-delay 1 http://127.0.0.1:8010/openapi.json
+          curl --silent --output /dev/null --retry 30 --retry-connrefused \
+            --retry-delay 1 http://127.0.0.1:8100/query
+          mkdir -p "$RUNNER_TEMP/locust"
+          "$RUNNER_TEMP/locust-env/bin/locust" -f loadtest/locustfile.py \
+            --headless -u 50 -r 50 -t 20s --host http://127.0.0.1:8100 \
+            --csv "$RUNNER_TEMP/locust/out" --only-summary --exit-code-on-error 0
+          echo "proxy audit outcomes (count, outcome, status):"
+          grep -o '"outcome": "[a-z_]*", "path": "[a-z]*", "status_code": [0-9a-z]*' \
+            "$RUNNER_TEMP/load-audit.jsonl" | sed 's/"path": "[a-z]*", //' | sort | uniq -c
+
+      - name: Load gate
+        run: uv run redteam-toolkit load-gate --stats "$RUNNER_TEMP/locust/out_stats.csv"

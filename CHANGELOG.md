@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-22
+- Added the `Load gate` workflow (`.github/workflows/load.yml`). It starts the weak stub and the gated proxy, runs Locust for 20 seconds at 50 users through the proxy and then runs `load-gate` on the stats. Locust is pinned to 2.47.0 and installed in its own environment, not in `uv.lock`. The job writes a window around the current time into a copy of the load example, so it does not fail on a date. No CI measurement exists yet.
 - Added `redteam-toolkit load-gate --stats FILE`, which checks a Locust stats file against a p95 limit (default 2,000 ms) and a failure rate limit (default 1%). It exits 0 on pass, 1 on a breach and 3 when the file cannot be read or the run has too few requests (default floor 100) to be judged, so an empty run never passes. It sends nothing.
 - Request ceilings now depend on the authorization kind. A `self_owned` file, which may only cover local targets, may ask for up to 60,000 requests per minute, 100,000 in total and 50 at once. Every other file keeps 120, 10,000 and 10, and the error names the limit and the ceiling. See ADR-013.
 - `redteam-toolkit score --answers FILE` scores answers from any tool. The file is JSON lines with a `probe` string and an `answer` string or null per line. Other fields are ignored, a null or empty answer counts as skipped, and a file with no answers exits 3. `--report` and `--answers` are mutually exclusive.
