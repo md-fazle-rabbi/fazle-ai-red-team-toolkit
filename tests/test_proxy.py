@@ -113,6 +113,29 @@ def test_a_body_that_is_not_a_json_object_is_rejected(tmp_path: Path) -> None:
     assert response.status_code == 422
 
 
+def test_a_malformed_body_is_audited_and_never_sent(tmp_path: Path) -> None:
+    entries: list[AuditEntry] = []
+    proxy = _proxy(tmp_path, client=_forbidden_client(), entries=entries)
+    response = proxy.post(
+        "/query",
+        content=b'{"question": "secret-xyz "broken" text"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == 422
+    assert "secret-xyz" not in response.text
+    assert [(e.outcome, e.status_code, e.path) for e in entries] == [
+        ("rejected", 422, "query")
+    ]
+    assert "secret-xyz" not in str(entries[0])
+
+
+def test_a_non_object_body_is_audited_as_rejected(tmp_path: Path) -> None:
+    entries: list[AuditEntry] = []
+    proxy = _proxy(tmp_path, client=_forbidden_client(), entries=entries)
+    proxy.post("/query", json=["not", "an", "object"])
+    assert [e.outcome for e in entries] == ["rejected"]
+
+
 def test_every_outcome_is_audited_without_bodies(tmp_path: Path) -> None:
     entries: list[AuditEntry] = []
     proxy = _proxy(tmp_path, entries=entries)

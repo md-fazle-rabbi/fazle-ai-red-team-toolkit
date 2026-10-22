@@ -3,7 +3,9 @@
 Tools such as garak send their own HTTP requests and never call send_probe. Point
 such a tool at this proxy instead of the target. Every request is then checked by
 the gate and counted by the budget before it is forwarded, and every outcome goes
-to an audit record.
+to an audit record. That includes a POST whose body is not a JSON object, which is
+rejected before anything is sent. Only POST requests are audited, because nothing
+else is ever forwarded.
 
 One proxy serves one target and one suite, fixed when it is created. The tool
 cannot choose a different suite or a different host by changing its request.
@@ -24,7 +26,8 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import httpx2
-from fastapi import Body, FastAPI
+from fastapi import Body, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 
 from redteam_toolkit.limits import RequestBudget
@@ -38,7 +41,7 @@ class AuditEntry:
     target_id: str
     suite: str
     path: str
-    outcome: str  # "forwarded", "refused" or "upstream_error"
+    outcome: str  # "forwarded", "refused", "rejected" or "upstream_error"
     status_code: int | None
     detail: str
 
@@ -86,6 +89,16 @@ def create_proxy_app(
                     detail=detail,
                 )
             )
+
+    @app.exception_handler(RequestValidationError)
+    def reject_malformed(request: Request, exc: Exception) -> JSONResponse:
+        # Why: FastAPI refuses a body that is not a JSON object before forward() runs,
+        # so without this the request would leave no audit record. The reply carries
+        # no part of the body, and neither does the audit entry.
+        del exc
+        message = "the request body is not a JSON object"
+        record(request.url.path.lstrip("/"), "rejected", 422, message)
+        return JSONResponse(status_code=422, content={"rejected": message})
 
     @app.post("/{path:path}")
     def forward(path: str, body: Annotated[dict[str, Any], Body()]) -> Response:

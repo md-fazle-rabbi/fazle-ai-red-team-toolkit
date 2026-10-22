@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-22
+- The gated proxy now audits a POST whose body is not a JSON object, as outcome `rejected` with status 422. Before this it was refused by FastAPI before the audit code ran and left no record. The reply and the audit entry carry no part of the body.
 - Added `redteam-toolkit compare --before A.json --after B.json`, which prints two run summaries side by side with totals. It sends nothing, exits 0 when both files can be read and 3 when one cannot, and ends with a caveat that the rates cover only two detectors on prompts each run samples for itself.
 
 ### 2026-10-21
