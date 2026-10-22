@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 2026-10-22
+- Added `redteam-toolkit load-gate --stats FILE`, which checks a Locust stats file against a p95 limit (default 2,000 ms) and a failure rate limit (default 1%). It exits 0 on pass, 1 on a breach and 3 when the file cannot be read or the run has too few requests (default floor 100) to be judged, so an empty run never passes. It sends nothing.
 - Request ceilings now depend on the authorization kind. A `self_owned` file, which may only cover local targets, may ask for up to 60,000 requests per minute, 100,000 in total and 50 at once. Every other file keeps 120, 10,000 and 10, and the error names the limit and the ceiling. See ADR-013.
 - `redteam-toolkit score --answers FILE` scores answers from any tool. The file is JSON lines with a `probe` string and an `answer` string or null per line. Other fields are ignored, a null or empty answer counts as skipped, and a file with no answers exits 3. `--report` and `--answers` are mutually exclusive.
 - The gated proxy now audits a POST whose body is not a JSON object, as outcome `rejected` with status 422. Before this it was refused by FastAPI before the audit code ran and left no record. The reply and the audit entry carry no part of the body.

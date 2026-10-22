@@ -1,0 +1,9 @@
+requests=2443 failures=0 p95_ms=110 requests_per_second=128.556
+load gate: pass
+exit: 0
+requests=2443 failures=0 p95_ms=110 requests_per_second=128.556
+load gate: fail, p95 110 ms is above 50 ms
+exit: 1
+== a run with only 10 requests
+cannot judge: the run has 10 requests, fewer than the 100 needed to judge it
+exit: 3

@@ -133,6 +133,8 @@ Instead of `--report`, `--answers FILE` scores answers from any other tool. The 
 
 Compare two summaries with `redteam-toolkit compare --before A.json --after B.json`. It prints each probe and the totals as "before > after". It sends nothing and does not judge which run is better. Each garak run samples its own prompts, so a small difference between two runs is not a measured improvement.
 
+Check a Locust run with `redteam-toolkit load-gate --stats out_stats.csv`. It fails when the p95 is above 2,000 ms or more than 1% of requests failed, and both limits can be set with `--max-p95-ms` and `--max-failure-rate`. A run with no requests, or fewer than `--min-requests` (default 100), exits 3 and never passes. The defaults come from the project plan, not from a measurement of any target.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 

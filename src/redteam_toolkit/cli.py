@@ -1,8 +1,8 @@
 """Command line entry point.
 
-Exit codes: 0 means authorized or clean, 1 means a detector flagged an answer, 2 means
-the Rules of Engagement file refused the request, 3 means a report or summary could
-not be read.
+Exit codes: 0 means authorized, clean or passed, 1 means a detector flagged an answer
+or a load gate failed, 2 means the Rules of Engagement file refused the request, 3
+means a report, summary or stats file could not be read or judged.
 """
 
 import argparse
@@ -14,6 +14,14 @@ from pathlib import Path
 import uvicorn
 
 from redteam_toolkit.limits import RequestBudget
+from redteam_toolkit.load_gate import (
+    DEFAULT_MAX_FAILURE_RATE,
+    DEFAULT_MAX_P95_MS,
+    DEFAULT_MIN_REQUESTS,
+    LoadGateError,
+    evaluate,
+    read_locust_stats,
+)
 from redteam_toolkit.proxy import JsonlAudit, create_proxy_app
 from redteam_toolkit.roe import SUITES, LoadedRoE, RoEError, RoEGate, Target, load_roe
 from redteam_toolkit.scoring import (
@@ -42,6 +50,23 @@ PROXY_HOST = "127.0.0.1"
 DEFAULT_PROXY_PORT = 8100
 MIN_PORT = 1024
 MAX_PORT = 65535
+
+
+def _positive(text: str) -> float:
+    try:
+        value = float(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a number") from exc
+    if not value > 0:
+        raise argparse.ArgumentTypeError("must be greater than zero")
+    return value
+
+
+def _rate(text: str) -> float:
+    value = _positive(text)
+    if value > 1:
+        raise argparse.ArgumentTypeError("a rate must be between 0 and 1")
+    return value
 
 
 def _port(text: str) -> int:
@@ -131,6 +156,38 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compare.add_argument("--before", required=True, help="summary JSON written earlier")
     compare.add_argument("--after", required=True, help="summary JSON to compare to it")
+
+    gate = sub.add_parser(
+        "load-gate",
+        help="check a Locust stats file against thresholds; sends nothing",
+    )
+    gate.add_argument(
+        "--stats", required=True, help="Locust stats file (NAME_stats.csv)"
+    )
+    gate.add_argument(
+        "--max-p95-ms",
+        type=_positive,
+        default=DEFAULT_MAX_P95_MS,
+        help=f"highest allowed p95 in milliseconds (default: {DEFAULT_MAX_P95_MS:g})",
+    )
+    gate.add_argument(
+        "--max-failure-rate",
+        type=_rate,
+        default=DEFAULT_MAX_FAILURE_RATE,
+        help=(
+            "highest allowed share of failed requests "
+            f"(default: {DEFAULT_MAX_FAILURE_RATE:g})"
+        ),
+    )
+    gate.add_argument(
+        "--min-requests",
+        type=int,
+        default=DEFAULT_MIN_REQUESTS,
+        help=(
+            "fewest requests a run needs to be judged "
+            f"(default: {DEFAULT_MIN_REQUESTS})"
+        ),
+    )
     return parser
 
 
@@ -210,12 +267,40 @@ def _compare(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _load_gate(args: argparse.Namespace) -> int:
+    # Why: this only reads a local file and sends nothing. A run that is empty or too
+    # small to judge exits with 3, never 0, so it cannot look like a pass.
+    try:
+        stats = read_locust_stats(Path(args.stats))
+        result = evaluate(
+            stats,
+            max_p95_ms=args.max_p95_ms,
+            max_failure_rate=args.max_failure_rate,
+            min_requests=args.min_requests,
+        )
+    except (OSError, LoadGateError) as exc:
+        sys.stderr.write(f"cannot judge: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(
+        f"requests={stats.requests} failures={stats.failures} "
+        f"p95_ms={stats.p95_ms:g} requests_per_second={stats.requests_per_second:g}\n"
+    )
+    if result.passed:
+        sys.stdout.write("load gate: pass\n")
+        return EXIT_OK
+    for reason in result.reasons:
+        sys.stdout.write(f"load gate: fail, {reason}\n")
+    return EXIT_FLAGGED
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "score":
         return _score(args)
     if args.command == "compare":
         return _compare(args)
+    if args.command == "load-gate":
+        return _load_gate(args)
     try:
         loaded = load_roe(_resolve_path(args.file))
         gate = RoEGate(loaded)
