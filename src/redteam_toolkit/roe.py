@@ -33,11 +33,17 @@ from pydantic import (
 
 # Why these numbers: they are policy ceilings I chose, not measured values. A file can
 # ask for less. It cannot ask for more without a code change that shows up in review.
+# The first three apply to every engagement. The SELF_OWNED ones are higher and apply
+# only to a self_owned authorization, which may only cover local targets, so a load
+# test of a stub you own can use more than a client system may be asked to take.
 MAX_FILE_BYTES: Final = 64 * 1024
 MAX_WINDOW: Final = timedelta(days=31)
 MAX_REQUESTS_PER_MINUTE: Final = 120
 MAX_TOTAL_REQUESTS: Final = 10_000
 MAX_CONCURRENCY: Final = 10
+SELF_OWNED_MAX_REQUESTS_PER_MINUTE: Final = 6_000
+SELF_OWNED_MAX_TOTAL_REQUESTS: Final = 100_000
+SELF_OWNED_MAX_CONCURRENCY: Final = 50
 
 LOCAL_HOSTS: Final = frozenset({"localhost", "127.0.0.1", "::1"})
 _DEFAULT_PORTS: Final = {"http": 80, "https": 443}
@@ -182,9 +188,14 @@ class Window(_Strict):
 
 
 class Limits(_Strict):
-    requests_per_minute: Annotated[int, Field(ge=1, le=MAX_REQUESTS_PER_MINUTE)]
-    total_requests: Annotated[int, Field(ge=1, le=MAX_TOTAL_REQUESTS)]
-    concurrency: Annotated[int, Field(ge=1, le=MAX_CONCURRENCY)]
+    # Why: these fields allow the higher self_owned ceilings. Whether the file may use
+    # them depends on its authorization, so RulesOfEngagement checks the lower ceilings
+    # for every other kind.
+    requests_per_minute: Annotated[
+        int, Field(ge=1, le=SELF_OWNED_MAX_REQUESTS_PER_MINUTE)
+    ]
+    total_requests: Annotated[int, Field(ge=1, le=SELF_OWNED_MAX_TOTAL_REQUESTS)]
+    concurrency: Annotated[int, Field(ge=1, le=SELF_OWNED_MAX_CONCURRENCY)]
 
 
 class AuthorizationDocument(_Strict):
@@ -279,6 +290,21 @@ class RulesOfEngagement(_Strict):
             target.environment != "local" for target in self.targets
         ):
             raise ValueError("a self_owned authorization may only cover local targets")
+        if self.authorization.kind != "self_owned":
+            for name, value, ceiling in (
+                (
+                    "requests_per_minute",
+                    self.limits.requests_per_minute,
+                    MAX_REQUESTS_PER_MINUTE,
+                ),
+                ("total_requests", self.limits.total_requests, MAX_TOTAL_REQUESTS),
+                ("concurrency", self.limits.concurrency, MAX_CONCURRENCY),
+            ):
+                if value > ceiling:
+                    raise ValueError(
+                        f"limits.{name} is above {ceiling}, the ceiling for "
+                        "anything but a self_owned authorization"
+                    )
         approver = self.authorized_by.email.lower()
         for target in self.targets:
             approval = target.production_approval

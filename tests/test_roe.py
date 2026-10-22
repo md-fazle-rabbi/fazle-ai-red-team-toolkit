@@ -154,7 +154,7 @@ INVALID = [
         id="window too long",
     ),
     pytest.param(
-        change(VALID, "requests_per_minute = 2", "requests_per_minute = 500"),
+        change(VALID, "requests_per_minute = 2", "requests_per_minute = 7000"),
         "limits.requests_per_minute",
         id="rate above the ceiling",
     ),
@@ -164,12 +164,12 @@ INVALID = [
         id="rate of zero",
     ),
     pytest.param(
-        change(VALID, "total_requests = 500", "total_requests = 100000"),
+        change(VALID, "total_requests = 500", "total_requests = 200000"),
         "limits.total_requests",
         id="total above the ceiling",
     ),
     pytest.param(
-        change(VALID, "concurrency = 1", "concurrency = 50"),
+        change(VALID, "concurrency = 1", "concurrency = 51"),
         "limits.concurrency",
         id="concurrency above the ceiling",
     ),
