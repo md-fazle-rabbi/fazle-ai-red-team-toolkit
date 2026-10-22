@@ -129,6 +129,8 @@ Run it with `redteam-toolkit score --report PATH --canary STRING`. It sends noth
 
 Add `--json PATH` to also write a summary of counts and flagged rates. The summary never contains prompt or answer text. The flagged rate is the share of answered attempts that either detector flagged. It is not a general bypass rate for the target.
 
+Compare two summaries with `redteam-toolkit compare --before A.json --after B.json`. It prints each probe and the totals as "before > after". It sends nothing and does not judge which run is better. Each garak run samples its own prompts, so a small difference between two runs is not a measured improvement.
+
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
 

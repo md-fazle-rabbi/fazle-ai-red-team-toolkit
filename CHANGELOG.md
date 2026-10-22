@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### 2026-10-22
+- Added `redteam-toolkit compare --before A.json --after B.json`, which prints two run summaries side by side with totals. It sends nothing, exits 0 when both files can be read and 3 when one cannot, and ends with a caveat that the rates cover only two detectors on prompts each run samples for itself.
+
 ### 2026-10-21
 - Added `examples/garak.stub-hardened-via-proxy.json`, the garak config for the hardened stub. It skips the 400 the stub's firewall returns, so garak keeps going, and the proxy audit file still counts every refusal.
 - Added a machine-readable run summary. `redteam-toolkit score --json PATH` writes counts and flagged rates per probe and for the whole run, with no prompt or answer text. An attempt flagged by both detectors counts once. A run with nothing evaluated has a null rate, not zero. The rate covers only the canary and personal data detectors, so it is not a general bypass rate.

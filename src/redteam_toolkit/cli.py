@@ -1,7 +1,8 @@
 """Command line entry point.
 
 Exit codes: 0 means authorized or clean, 1 means a detector flagged an answer, 2 means
-the Rules of Engagement file refused the request, 3 means a report could not be scored.
+the Rules of Engagement file refused the request, 3 means a report or summary could
+not be read.
 """
 
 import argparse
@@ -21,7 +22,13 @@ from redteam_toolkit.scoring import (
     read_garak_report,
     score_attempts,
 )
-from redteam_toolkit.summary import summarize, summary_json
+from redteam_toolkit.summary import (
+    SummaryError,
+    format_comparison,
+    read_summary,
+    summarize,
+    summary_json,
+)
 
 EXIT_OK = 0
 EXIT_FLAGGED = 1
@@ -111,6 +118,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         help="also write a JSON summary (counts and rates only) to this file",
     )
+
+    compare = sub.add_parser(
+        "compare",
+        help="compare two run summaries side by side; sends nothing",
+    )
+    compare.add_argument("--before", required=True, help="summary JSON written earlier")
+    compare.add_argument("--after", required=True, help="summary JSON to compare to it")
     return parser
 
 
@@ -173,10 +187,25 @@ def _score(args: argparse.Namespace) -> int:
     return EXIT_FLAGGED if summary.flagged else EXIT_OK
 
 
+def _compare(args: argparse.Namespace) -> int:
+    # Why: like score, this only reads local files. It prints both sides and never
+    # decides which one is better, so it exits 0 whenever both files can be read.
+    try:
+        before = read_summary(Path(args.before))
+        after = read_summary(Path(args.after))
+    except (OSError, SummaryError) as exc:
+        sys.stderr.write(f"cannot compare: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(format_comparison(before, after))
+    return EXIT_OK
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "score":
         return _score(args)
+    if args.command == "compare":
+        return _compare(args)
     try:
         loaded = load_roe(_resolve_path(args.file))
         gate = RoEGate(loaded)
