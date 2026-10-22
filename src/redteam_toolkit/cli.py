@@ -19,6 +19,7 @@ from redteam_toolkit.roe import SUITES, LoadedRoE, RoEError, RoEGate, Target, lo
 from redteam_toolkit.scoring import (
     ReportError,
     format_scores,
+    read_answers_file,
     read_garak_report,
     score_attempts,
 )
@@ -105,9 +106,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     score = sub.add_parser(
         "score",
-        help="score the answers in a garak report; sends nothing",
+        help="score answers from a garak report or an answers file; sends nothing",
     )
-    score.add_argument("--report", required=True, help="garak report (.report.jsonl)")
+    source = score.add_mutually_exclusive_group(required=True)
+    source.add_argument("--report", help="garak report (.report.jsonl)")
+    source.add_argument(
+        "--answers",
+        help='JSON lines file, one {"probe": ..., "answer": ...} object per line',
+    )
     score.add_argument(
         "--canary",
         action="append",
@@ -165,15 +171,19 @@ def _serve_proxy(
 
 def _score(args: argparse.Namespace) -> int:
     # Why: this only reads a local file and sends nothing, so it needs no Rules of
-    # Engagement file. An empty report must never look clean, so it exits with 3.
+    # Engagement file. An empty input must never look clean, so it exits with 3.
     try:
-        attempts = read_garak_report(Path(args.report))
+        attempts = (
+            read_answers_file(Path(args.answers))
+            if args.answers
+            else read_garak_report(Path(args.report))
+        )
     except (OSError, ReportError) as exc:
         sys.stderr.write(f"cannot score: {exc}\n")
         return EXIT_UNSCORABLE
     scores = score_attempts(attempts, canaries=args.canary)
     if not any(score.evaluated for score in scores):
-        sys.stderr.write("cannot score: the report has no answered attempts\n")
+        sys.stderr.write("cannot score: the input has no answered attempts\n")
         return EXIT_UNSCORABLE
     sys.stdout.write(format_scores(scores))
     summary = summarize(scores)

@@ -105,6 +105,35 @@ def read_garak_report(path: Path) -> list[Attempt]:
     return [attempt for _, attempt in latest.values()]
 
 
+def read_answers_file(path: Path) -> list[Attempt]:
+    """Read answers from a neutral JSON lines file, one object per line.
+
+    Each line needs "probe" (a string) and "answer" (a string, or null when the
+    tool got no answer). Any other field is ignored, so a tool may keep its own
+    extra fields without them ever reaching a score. This lets answers from any
+    tool use the same detectors without this package importing that tool.
+    """
+    attempts: list[Attempt] = []
+    with path.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ReportError(f"line {number} is not valid JSON") from exc
+            probe = row.get("probe") if isinstance(row, dict) else None
+            answer = row.get("answer") if isinstance(row, dict) else None
+            if not isinstance(probe, str) or not (
+                answer is None or isinstance(answer, str)
+            ):
+                raise ReportError(
+                    f"line {number}: needs a string probe and a string or null answer"
+                )
+            attempts.append(Attempt(probe, (answer,) if answer else ()))
+    return attempts
+
+
 def score_attempts(
     attempts: Sequence[Attempt], *, canaries: Sequence[str]
 ) -> list[ProbeScore]:
