@@ -1,0 +1,44 @@
+All checks passed!
+47 files already formatted
+Success: no issues found in 34 source files
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/fazle-rabbi/Fazle-Rabbi/Projects/AI Engineer/fazle-ai-red-team-toolkit
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collected 273 items
+
+tests/test_answers_file.py ............                                  [  4%]
+tests/test_cli.py .........                                              [  7%]
+tests/test_cli_proxy.py .........                                        [ 10%]
+tests/test_cli_score.py ..........                                       [ 14%]
+tests/test_compare.py ..........                                         [ 18%]
+tests/test_concurrency.py ..                                             [ 19%]
+tests/test_example_load.py ..                                            [ 19%]
+tests/test_examples.py ...                                               [ 20%]
+tests/test_garak_config.py ..........                                    [ 24%]
+tests/test_heat_map.py .......                                           [ 27%]
+tests/test_limits.py ..........                                          [ 30%]
+tests/test_package.py ...                                                [ 31%]
+tests/test_proxy.py ...............                                      [ 37%]
+tests/test_roe.py ...................................................... [ 57%]
+...................................                                      [ 69%]
+tests/test_roe_limits.py ........                                        [ 72%]
+tests/test_runner.py ............                                        [ 77%]
+tests/test_scoring.py ......................                             [ 85%]
+tests/test_stub_contract.py ......                                       [ 87%]
+tests/test_stub_target.py ...................                            [ 94%]
+tests/test_summary.py ......                                             [ 96%]
+tests/test_threat_map.py .........                                       [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name    Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------
+TOTAL     798      0    170      0   100%
+
+11 files skipped due to complete coverage.
+Required test coverage of 90% reached. Total coverage: 100.00%
+============================= 273 passed in 5.46s ==============================

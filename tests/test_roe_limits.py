@@ -31,7 +31,7 @@ def _load(tmp_path: Path, text: str) -> None:
 
 
 def test_a_self_owned_file_may_use_the_higher_ceilings(tmp_path: Path) -> None:
-    _load(tmp_path, _limits(VALID, rpm=6000, total=100_000, concurrency=50))
+    _load(tmp_path, _limits(VALID, rpm=60_000, total=100_000, concurrency=50))
 
 
 def test_a_signed_file_may_use_the_standard_ceilings(tmp_path: Path) -> None:
@@ -56,7 +56,7 @@ def test_a_signed_file_cannot_use_the_self_owned_ceilings(
 
 @pytest.mark.parametrize(
     ("rpm", "total", "concurrency"),
-    [(6001, 500, 1), (2, 100_001, 1), (2, 500, 51)],
+    [(60_001, 500, 1), (2, 100_001, 1), (2, 500, 51)],
 )
 def test_nothing_may_pass_the_self_owned_ceilings(
     tmp_path: Path, rpm: int, total: int, concurrency: int

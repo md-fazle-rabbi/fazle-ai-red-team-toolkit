@@ -160,7 +160,7 @@ uv run pytest --cov --cov-fail-under=90
   signed document, and a person still has to check that document.
 - The request limits in the file are validated against ceilings in the code. The ceilings
   (120 requests per minute, 10,000 requests in total, 10 at once, a 31 day window) are
-  values I chose, not measured ones. A `self_owned` file, which may only cover local targets, may ask for up to 6,000 per minute, 100,000 in total and 50 at once (ADR-013).
+  values I chose, not measured ones. A `self_owned` file, which may only cover local targets, may ask for up to 60,000 per minute, 100,000 in total and 50 at once (ADR-013).
 - The URL check compares text, not the address a name resolves to, and it cannot stop an
   HTTP client from following a redirect off the target. `send_probe` turns redirects off
   by default; a caller that builds its own client has to do the same.

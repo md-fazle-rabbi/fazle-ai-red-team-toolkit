@@ -1,0 +1,23 @@
+2026-10-22T10:03:34Z
+locust 2.47.0 from /home/fazle-rabbi/tools/locust-env/lib/python3.13/site-packages/locust (Python 3.13.15)
+cpu cores: 8
+== 50 users, 20 seconds, through the proxy ==
+Request Count        2468.0
+Failure Count        0.0
+Requests/s           129.8
+50%                  380.0
+95%                  480.0
+99%                  510.0
+Max Response Time    597.7
+audit outcomes (count, outcome, status):
+   2615 "outcome": "forwarded", "status_code": 200
+== 10 users, 20 seconds, through the proxy ==
+Request Count        2443.0
+Failure Count        0.0
+Requests/s           128.6
+50%                  76.0
+95%                  110.0
+99%                  120.0
+Max Response Time    170.3
+audit outcomes (count, outcome, status):
+   2544 "outcome": "forwarded", "status_code": 200

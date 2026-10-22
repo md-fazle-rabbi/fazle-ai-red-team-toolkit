@@ -154,7 +154,7 @@ INVALID = [
         id="window too long",
     ),
     pytest.param(
-        change(VALID, "requests_per_minute = 2", "requests_per_minute = 7000"),
+        change(VALID, "requests_per_minute = 2", "requests_per_minute = 70000"),
         "limits.requests_per_minute",
         id="rate above the ceiling",
     ),
