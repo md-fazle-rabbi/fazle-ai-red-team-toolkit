@@ -1,0 +1,24 @@
+wrote proof/fairness-synthetic-bias-0.json (seed=7 bias=0)
+mean absolute SHAP value per feature (not judged by the gate):
+  x1: 2.7569
+  x2: 1.3663
+  proxy: 0.0615
+attribute=group data=synthetic
+group=group_a count=1192 selection_rate=0.5176 true_positive_rate=0.8847 false_positive_rate=0.1578
+group=group_b count=808 selection_rate=0.5124 true_positive_rate=0.8659 false_positive_rate=0.1482
+demographic_parity_difference=0.0052 equalized_odds_difference=0.0189
+fairness gate: pass
+gate exit=0
+wrote proof/fairness-synthetic-bias-1.0.json (seed=7 bias=1)
+mean absolute SHAP value per feature (not judged by the gate):
+  proxy: 2.8782
+  x1: 2.5965
+  x2: 1.3006
+attribute=group data=synthetic
+group=group_a count=1192 selection_rate=0.4060 true_positive_rate=0.8846 false_positive_rate=0.0673
+group=group_b count=808 selection_rate=0.6337 true_positive_rate=0.9249 false_positive_rate=0.1457
+demographic_parity_difference=0.2276 equalized_odds_difference=0.0784
+fairness gate: fail, demographic parity difference 0.2276 is above 0.1
+gate exit=1
+All checks passed!
+57 files already formatted
