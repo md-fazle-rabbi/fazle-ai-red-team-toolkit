@@ -1,0 +1,31 @@
+Source: GitHub Actions log of the "Load gate" workflow, job "load gate", run on
+2026-10-23 at about 05:38 UTC. Copied by hand from the two steps below. One run
+against the weak stub through the gated proxy, not a measured safe limit.
+
+== Step: Run the load test through the gated proxy (22s) ==
+Run set -euo pipefail
+proxy: engagement=stub-load-selftest target=stub-weak-local suite=load upstream=http://127.0.0.1:8010 listen=http://127.0.0.1:8100 audit=/home/runner/work/_temp/load-audit.jsonl
+[2026-10-23 05:38:08,234] runnervmdkmh8/INFO/locust.main: Starting Locust 2.47.0
+[2026-10-23 05:38:08,234] runnervmdkmh8/INFO/locust.main: Run time limit set to 20 seconds
+[2026-10-23 05:38:08,235] runnervmdkmh8/INFO/locust.runners: Ramping to 50 users at a rate of 50.00 per second
+[2026-10-23 05:38:08,237] runnervmdkmh8/INFO/locust.runners: All users spawned: {"AskUser": 50} (50 total users)
+[2026-10-23 05:38:27,707] runnervmdkmh8/INFO/locust.main: --run-time limit reached, shutting down
+[2026-10-23 05:38:27,740] runnervmdkmh8/INFO/locust.main: Shutting down (exit code 0)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+POST     /query                                                                         12204     0(0.00%) |     79      32     196     79 |  625.81        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                     12204     0(0.00%) |     79      32     196     79 |  625.81        0.00
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+POST     /query                                                                                 79     81     82     83     85     88     94    110    190    200    200  12204
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                             79     81     82     83     85     88     94    110    190    200    200  12204
+proxy audit outcomes (count, outcome, status):
+  12232 "outcome": "forwarded", "status_code": 200
+
+== Step: Load gate ==
+Run uv run redteam-toolkit load-gate --stats "$RUNNER_TEMP/locust/out_stats.csv"
+requests=11887 failures=0 p95_ms=88 requests_per_second=625.19
+load gate: pass

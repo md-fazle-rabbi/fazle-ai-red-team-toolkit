@@ -137,7 +137,7 @@ Write a Markdown report with `redteam-toolkit report --file ROE.toml --run SUITE
 
 Check a Locust run with `redteam-toolkit load-gate --stats out_stats.csv`. It fails when the p95 is above 2,000 ms or more than 1% of requests failed, and both limits can be set with `--max-p95-ms` and `--max-failure-rate`. A run with no requests, or fewer than `--min-requests` (default 100), exits 3 and never passes. The defaults come from the project plan, not from a measurement of any target.
 
-The `Load gate` workflow runs this on every push and pull request: 50 simulated users for 20 seconds through the gated proxy against the weak stub, then `load-gate` with the defaults. The 2,000 ms and 1% limits come from the project plan. They have not been measured on a GitHub runner.
+The `Load gate` workflow runs this on every push and pull request: 50 simulated users for 20 seconds through the gated proxy against the weak stub, then `load-gate` with the defaults. The 2,000 ms and 1% limits come from the project plan. One run on a GitHub runner on 2026-10-23 gave a p95 of 88 ms and no failures (`proof/load-gate-ci-run.txt`). That is one run against the stub, not a measured safe limit.
 
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
