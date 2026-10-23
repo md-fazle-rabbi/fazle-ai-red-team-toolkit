@@ -1,0 +1,18 @@
+All checks passed!
+58 files already formatted
+Success: no issues found in 42 source files
+........................................................................ [ 19%]
+........................................................................ [ 39%]
+........................................................................ [ 59%]
+........................................................................ [ 79%]
+........................................................................ [ 99%]
+.                                                                        [100%]
+361 passed in 6.06s
+TOTAL    1141      0    264      0   100%
+
+14 files skipped due to complete coverage.
+report written: proof/report-stub-bias.md
+exit=0
+cannot report: suite 'bias' is not in allowed_suites of the engagement
+exit=3
+ls: cannot access '/tmp/should-not-exist.md': No such file or directory

@@ -181,8 +181,12 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument(
         "--run",
         action="append",
-        required=True,
+        default=[],
         help="SUITE[:LABEL]=SUMMARY.json, repeat the option for more runs",
+    )
+    report.add_argument(
+        "--fairness",
+        help="fairness summary JSON to add as a group fairness section",
     )
     report.add_argument("--out", required=True, help="Markdown file to write")
 
@@ -340,9 +344,12 @@ def _report(args: argparse.Namespace) -> int:
         for spec in args.run:
             suite, label, path = parse_run_spec(spec)
             runs.append(RunInput(label, suite, read_summary(Path(path))))
-        text = build_report(loaded, runs, generated_at=datetime.now(UTC))
+        fairness = read_fairness_summary(Path(args.fairness)) if args.fairness else None
+        text = build_report(
+            loaded, runs, generated_at=datetime.now(UTC), fairness=fairness
+        )
         Path(args.out).write_text(text, encoding="utf-8")
-    except (OSError, SummaryError, ReportBuildError) as exc:
+    except (OSError, SummaryError, FairnessError, ReportBuildError) as exc:
         sys.stderr.write(f"cannot report: {exc}\n")
         return EXIT_UNSCORABLE
     sys.stdout.write(f"report written: {args.out}\n")

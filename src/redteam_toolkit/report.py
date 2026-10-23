@@ -13,6 +13,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
 
+from redteam_toolkit.fairness import (
+    DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE,
+    DEFAULT_MAX_PARITY_DIFFERENCE,
+    FairnessError,
+    FairnessSummary,
+    evaluate,
+)
 from redteam_toolkit.roe import SUITES, LoadedRoE
 from redteam_toolkit.summary import CAVEAT, RunSummary
 from redteam_toolkit.threat_map import (
@@ -26,10 +33,12 @@ from redteam_toolkit.threat_map import (
 _LABEL: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]{0,39}")
 DEFAULT_LABEL: Final = "run"
 
-LIMITATIONS: Final[tuple[str, ...]] = (
+RUN_LIMITATIONS: Final[tuple[str, ...]] = (
     CAVEAT,
     "The flagged rate is not a bypass rate for the target. The detectors do not "
     "judge whether an answer was helpful, harmful or correct.",
+)
+COMMON_LIMITATIONS: Final[tuple[str, ...]] = (
     "Results describe the targets named above during the stated window and nothing "
     "else. A result against a local stub says nothing about another system.",
     "The STRIDE column is the author's judgement. The ATLAS and OWASP entries are "
@@ -39,6 +48,14 @@ LIMITATIONS: Final[tuple[str, ...]] = (
     "The report holds counts and rates only. It contains no prompt text and no "
     "answer text.",
 )
+LIMITATIONS: Final[tuple[str, ...]] = RUN_LIMITATIONS + COMMON_LIMITATIONS
+FAIRNESS_LIMITATIONS: Final[tuple[str, ...]] = (
+    "The fairness figures come from synthetic data and a stand-in model. They say "
+    "nothing about any other system.",
+    "The fairness limits are policy values the author chose, not measured ones. The "
+    "check compares group rates and does not say why a gap exists.",
+)
+FAIRNESS_SUITE: Final = "bias"
 
 
 class ReportBuildError(ValueError):
@@ -75,9 +92,15 @@ def _percent(rate: float | None) -> str:
     return "n/a" if rate is None else f"{rate * 100:.1f}%"
 
 
-def _check(loaded: LoadedRoE, runs: Sequence[RunInput]) -> None:
-    if not runs:
-        raise ReportBuildError("no runs were given")
+def _check(
+    loaded: LoadedRoE, runs: Sequence[RunInput], fairness: FairnessSummary | None
+) -> None:
+    if not runs and fairness is None:
+        raise ReportBuildError("no runs or fairness summary were given")
+    if fairness is not None and FAIRNESS_SUITE not in loaded.roe.allowed_suites:
+        raise ReportBuildError(
+            f"suite {FAIRNESS_SUITE!r} is not in allowed_suites of the engagement"
+        )
     seen: set[tuple[str, str]] = set()
     for run in runs:
         if run.suite not in loaded.roe.allowed_suites:
@@ -158,6 +181,39 @@ def _run_section(run: RunInput) -> list[str]:
     return lines
 
 
+def _fairness_section(summary: FairnessSummary) -> list[str]:
+    try:
+        result = evaluate(summary)
+    except FairnessError as exc:
+        raise ReportBuildError(f"the fairness summary cannot be judged: {exc}") from exc
+    lines = [
+        f"### Group fairness ({FAIRNESS_SUITE})",
+        "",
+        f"Data: {summary.data}. Attribute: {_cell(summary.attribute)}.",
+        "",
+        "| group | rows | selection rate | true positive rate | false positive rate |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for g in summary.groups:
+        tpr = "n/a" if g.true_positive_rate is None else f"{g.true_positive_rate:.4f}"
+        fpr = "n/a" if g.false_positive_rate is None else f"{g.false_positive_rate:.4f}"
+        lines.append(
+            f"| {_cell(g.group)} | {g.count} | {g.selection_rate:.4f} | {tpr} | {fpr} |"
+        )
+    lines += [
+        "",
+        f"Demographic parity difference: {result.parity_difference:.4f} "
+        f"(limit {DEFAULT_MAX_PARITY_DIFFERENCE:g}). "
+        f"Equalized odds difference: {result.equalized_odds_difference:.4f} "
+        f"(limit {DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE:g}).",
+    ]
+    if result.passed:
+        lines.append("Result: both differences are within their limits.")
+    else:
+        lines += [f"Result: {reason}." for reason in result.reasons]
+    return lines
+
+
 def _mapping(suites: Sequence[str]) -> list[str]:
     lines = [
         "## Threat mapping",
@@ -188,12 +244,28 @@ def _mapping(suites: Sequence[str]) -> list[str]:
 
 
 def build_report(
-    loaded: LoadedRoE, runs: Sequence[RunInput], *, generated_at: datetime
+    loaded: LoadedRoE,
+    runs: Sequence[RunInput],
+    *,
+    generated_at: datetime,
+    fairness: FairnessSummary | None = None,
 ) -> str:
-    _check(loaded, runs)
+    _check(loaded, runs, fairness)
     evaluated = sum(run.summary.evaluated for run in runs)
     flagged = sum(run.summary.flagged for run in runs)
     suites = list(dict.fromkeys(run.suite for run in runs))
+    overview: list[str] = []
+    if runs:
+        overview.append(
+            f"{len(runs)} run(s) covering {', '.join(suites)}. {evaluated} attempts "
+            f"were evaluated. Flagged by at least one detector: {flagged}."
+        )
+    if fairness is not None:
+        overview.append(
+            f"A group fairness summary over {len(fairness.groups)} groups is included."
+        )
+        if FAIRNESS_SUITE not in suites:
+            suites.append(FAIRNESS_SUITE)
     lines = [
         f"# Red team report: {loaded.roe.engagement_id}",
         "",
@@ -201,8 +273,7 @@ def build_report(
         "",
         "## Overview",
         "",
-        f"{len(runs)} run(s) covering {', '.join(suites)}. {evaluated} attempts were "
-        f"evaluated. {flagged} of them were flagged by at least one detector.",
+        " ".join(overview),
         "",
         *_engagement(loaded),
         "",
@@ -211,6 +282,13 @@ def build_report(
     ]
     for run in runs:
         lines += [*_run_section(run), ""]
+    if fairness is not None:
+        lines += [*_fairness_section(fairness), ""]
+    limitations = (
+        (RUN_LIMITATIONS if runs else ())
+        + COMMON_LIMITATIONS
+        + (FAIRNESS_LIMITATIONS if fairness is not None else ())
+    )
     lines += [*_mapping(suites), "", "## Limitations", ""]
-    lines += [f"- {item}" for item in LIMITATIONS]
+    lines += [f"- {item}" for item in limitations]
     return "\n".join(lines) + "\n"

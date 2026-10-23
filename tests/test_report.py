@@ -1,11 +1,13 @@
 """Tests for the report generator."""
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from redteam_toolkit.cli import main
+from redteam_toolkit.fairness import FairnessSummary, read_fairness_summary
 from redteam_toolkit.report import (
     LIMITATIONS,
     ReportBuildError,
@@ -15,7 +17,7 @@ from redteam_toolkit.report import (
 )
 from redteam_toolkit.roe import load_roe
 from redteam_toolkit.scoring import ProbeScore
-from redteam_toolkit.summary import summarize, summary_json
+from redteam_toolkit.summary import CAVEAT, summarize, summary_json
 from tests.roe_samples import VALID
 
 NONE = {"canary_leak": 0, "pii_exposed": 0}
@@ -212,3 +214,166 @@ def test_the_command_exits_3_when_it_cannot_report(
     assert code == 3
     assert "cannot report" in capsys.readouterr().err
     assert not out.exists()
+
+
+WITH_BIAS = VALID.replace(
+    'allowed_suites = ["prompt_injection", "pii_leakage"]',
+    'allowed_suites = ["prompt_injection", "pii_leakage", "bias"]',
+)
+EXAMPLE = (
+    Path(__file__).resolve().parents[1]
+    / "examples"
+    / ("fairness.synthetic-example.json")
+)
+
+
+def _bias_roe(tmp_path: Path) -> Path:
+    path = tmp_path / "roe-bias.toml"
+    path.write_text(WITH_BIAS, encoding="utf-8")
+    return path
+
+
+def _fairness(tmp_path: Path, *, gap: float = 0.0, count: int = 100) -> Path:
+    groups = [
+        {
+            "group": name,
+            "count": count,
+            "selection_rate": 0.5 + shift,
+            "true_positive_rate": 0.8,
+            "false_positive_rate": 0.1,
+        }
+        for name, shift in (("a", 0.0), ("b", gap))
+    ]
+    body = {
+        "schema_version": 1,
+        "attribute": "group",
+        "data": "synthetic",
+        "groups": groups,
+    }
+    path = tmp_path / "fairness.json"
+    path.write_text(json.dumps(body), encoding="utf-8")
+    return path
+
+
+def _summary_of(path: Path) -> FairnessSummary:
+    return read_fairness_summary(path)
+
+
+def test_a_fairness_section_shows_the_groups_and_the_result(tmp_path: Path) -> None:
+    loaded = load_roe(_bias_roe(tmp_path))
+    text = build_report(
+        loaded, [], generated_at=NOW, fairness=read_fairness_summary(EXAMPLE)
+    )
+    assert "### Group fairness (bias)" in text
+    assert "| group_a | 200 | 0.5000 | 0.8000 | 0.1000 |" in text
+    assert "Demographic parity difference: 0.0400 (limit 0.1)." in text
+    assert "Result: both differences are within their limits." in text
+    assert "A group fairness summary over 2 groups is included." in text
+    assert "LLM09 Misinformation" in text
+    assert "synthetic data and a stand-in model" in text
+    assert "attempts were evaluated" not in text
+    assert CAVEAT not in text
+
+
+def test_a_fairness_gap_is_reported_as_a_result(tmp_path: Path) -> None:
+    loaded = load_roe(_bias_roe(tmp_path))
+    summary = _summary_of(_fairness(tmp_path, gap=0.3))
+    text = build_report(loaded, [], generated_at=NOW, fairness=summary)
+    assert "Result: demographic parity difference 0.3000 is above 0.1." in text
+
+
+def test_runs_and_fairness_can_be_reported_together(tmp_path: Path) -> None:
+    loaded = load_roe(_bias_roe(tmp_path))
+    run = _run("r", "prompt_injection", [ProbeScore("a.One", 4, 0, NONE, 0)])
+    text = build_report(
+        loaded, [run], generated_at=NOW, fairness=_summary_of(_fairness(tmp_path))
+    )
+    assert "4 attempts were evaluated." in text
+    assert "### prompt_injection" in text
+    assert text.count("### bias") == 1
+
+
+def test_fairness_needs_the_bias_suite_in_the_engagement(tmp_path: Path) -> None:
+    loaded = load_roe(_roe(tmp_path))
+    summary = _summary_of(_fairness(tmp_path))
+    with pytest.raises(ReportBuildError, match="'bias' is not in allowed_suites"):
+        build_report(loaded, [], generated_at=NOW, fairness=summary)
+
+
+def test_a_fairness_summary_that_cannot_be_judged_is_rejected(tmp_path: Path) -> None:
+    loaded = load_roe(_bias_roe(tmp_path))
+    summary = _summary_of(_fairness(tmp_path, count=5))
+    with pytest.raises(ReportBuildError, match="cannot be judged"):
+        build_report(loaded, [], generated_at=NOW, fairness=summary)
+
+
+def test_a_missing_error_rate_shows_as_na(tmp_path: Path) -> None:
+    body = json.loads(_fairness(tmp_path).read_text(encoding="utf-8"))
+    body["groups"].append({"group": "c", "count": 100, "selection_rate": 0.5})
+    path = tmp_path / "three.json"
+    path.write_text(json.dumps(body), encoding="utf-8")
+    loaded = load_roe(_bias_roe(tmp_path))
+    text = build_report(loaded, [], generated_at=NOW, fairness=_summary_of(path))
+    assert "| c | 100 | 0.5000 | n/a | n/a |" in text
+
+
+def test_the_command_reports_fairness_alone(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = tmp_path / "report.md"
+    code = main(
+        [
+            "report",
+            "--file",
+            str(_bias_roe(tmp_path)),
+            "--fairness",
+            str(_fairness(tmp_path)),
+            "--out",
+            str(out),
+        ]
+    )
+    assert code == 0
+    assert "report written" in capsys.readouterr().out
+    assert "### Group fairness (bias)" in out.read_text(encoding="utf-8")
+
+
+def test_the_command_needs_a_run_or_a_fairness_summary(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = tmp_path / "report.md"
+    code = main(["report", "--file", str(_roe(tmp_path)), "--out", str(out)])
+    assert code == 3
+    assert "no runs" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_the_command_exits_3_for_an_unreadable_fairness_summary(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = tmp_path / "report.md"
+    code = main(
+        [
+            "report",
+            "--file",
+            str(_bias_roe(tmp_path)),
+            "--fairness",
+            str(tmp_path / "nope.json"),
+            "--out",
+            str(out),
+        ]
+    )
+    assert code == 3
+    assert "cannot report" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_a_bias_run_and_a_fairness_summary_share_one_mapping_entry(
+    tmp_path: Path,
+) -> None:
+    loaded = load_roe(_bias_roe(tmp_path))
+    run = _run("r", "bias", [ProbeScore("a.One", 4, 0, NONE, 0)])
+    text = build_report(
+        loaded, [run], generated_at=NOW, fairness=_summary_of(_fairness(tmp_path))
+    )
+    assert text.count("### bias\n") == 1
+    assert CAVEAT in text
