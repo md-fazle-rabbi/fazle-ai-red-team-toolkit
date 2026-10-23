@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "attribute": "group",
+  "data": "synthetic",
+  "groups": [
+    {
+      "group": "group_a",
+      "count": 200,
+      "selection_rate": 0.5,
+      "true_positive_rate": 0.8,
+      "false_positive_rate": 0.1
+    },
+    {
+      "group": "group_b",
+      "count": 180,
+      "selection_rate": 0.54,
+      "true_positive_rate": 0.76,
+      "false_positive_rate": 0.13
+    }
+  ]
+}

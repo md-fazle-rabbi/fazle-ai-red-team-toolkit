@@ -1,0 +1,26 @@
+All checks passed!
+56 files already formatted
+Success: no issues found in 41 source files
+........................................................................ [ 20%]
+........................................................................ [ 41%]
+........................................................................ [ 62%]
+........................................................................ [ 82%]
+............................................................             [100%]
+348 passed in 6.43s
+TOTAL    1107      0    250      0   100%
+
+14 files skipped due to complete coverage.
+attribute=group data=synthetic
+group=group_a count=200 selection_rate=0.5000 true_positive_rate=0.8000 false_positive_rate=0.1000
+group=group_b count=180 selection_rate=0.5400 true_positive_rate=0.7600 false_positive_rate=0.1300
+demographic_parity_difference=0.0400 equalized_odds_difference=0.0400
+fairness gate: pass
+exit=0
+attribute=group data=synthetic
+group=group_a count=200 selection_rate=0.5000 true_positive_rate=0.8000 false_positive_rate=0.1000
+group=group_b count=180 selection_rate=0.5400 true_positive_rate=0.7600 false_positive_rate=0.1300
+demographic_parity_difference=0.0400 equalized_odds_difference=0.0400
+fairness gate: fail, demographic parity difference 0.0400 is above 0.01
+exit=1
+cannot judge: groups with fewer than 500 rows cannot be judged: group_a, group_b
+exit=3

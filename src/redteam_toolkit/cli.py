@@ -1,7 +1,7 @@
 """Command line entry point.
 
 Exit codes: 0 means authorized, clean or passed, 1 means a detector flagged an answer
-or a load gate failed, 2 means the Rules of Engagement file refused the request, 3
+or a gate failed, 2 means the Rules of Engagement file refused the request, 3
 means a report, summary or stats file could not be read or judged.
 """
 
@@ -14,6 +14,15 @@ from pathlib import Path
 
 import uvicorn
 
+from redteam_toolkit.fairness import (
+    DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE,
+    DEFAULT_MAX_PARITY_DIFFERENCE,
+    DEFAULT_MIN_GROUP_SIZE,
+    FairnessError,
+    format_groups,
+    read_fairness_summary,
+)
+from redteam_toolkit.fairness import evaluate as evaluate_fairness
 from redteam_toolkit.limits import RequestBudget
 from redteam_toolkit.load_gate import (
     DEFAULT_MAX_FAILURE_RATE,
@@ -208,6 +217,36 @@ def build_parser() -> argparse.ArgumentParser:
             f"(default: {DEFAULT_MIN_REQUESTS})"
         ),
     )
+
+    fair = sub.add_parser(
+        "fairness-gate",
+        help="check a group fairness summary against thresholds; sends nothing",
+    )
+    fair.add_argument("--summary", required=True, help="fairness summary JSON")
+    fair.add_argument(
+        "--max-parity-difference",
+        type=_rate,
+        default=DEFAULT_MAX_PARITY_DIFFERENCE,
+        help=(
+            "largest allowed gap in selection rate between groups "
+            f"(default: {DEFAULT_MAX_PARITY_DIFFERENCE:g})"
+        ),
+    )
+    fair.add_argument(
+        "--max-equalized-odds-difference",
+        type=_rate,
+        default=DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE,
+        help=(
+            "largest allowed gap in true or false positive rate between groups "
+            f"(default: {DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE:g})"
+        ),
+    )
+    fair.add_argument(
+        "--min-group-size",
+        type=int,
+        default=DEFAULT_MIN_GROUP_SIZE,
+        help=f"fewest rows a group needs (default: {DEFAULT_MIN_GROUP_SIZE})",
+    )
     return parser
 
 
@@ -336,6 +375,33 @@ def _load_gate(args: argparse.Namespace) -> int:
     return EXIT_FLAGGED
 
 
+def _fairness_gate(args: argparse.Namespace) -> int:
+    # Why: this only reads a local file and sends nothing. A summary that cannot be
+    # judged exits with 3, never 0, so it cannot look like a pass.
+    try:
+        summary = read_fairness_summary(Path(args.summary))
+        result = evaluate_fairness(
+            summary,
+            max_parity_difference=args.max_parity_difference,
+            max_equalized_odds_difference=args.max_equalized_odds_difference,
+            min_group_size=args.min_group_size,
+        )
+    except (OSError, FairnessError) as exc:
+        sys.stderr.write(f"cannot judge: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(format_groups(summary))
+    sys.stdout.write(
+        f"demographic_parity_difference={result.parity_difference:.4f} "
+        f"equalized_odds_difference={result.equalized_odds_difference:.4f}\n"
+    )
+    if result.passed:
+        sys.stdout.write("fairness gate: pass\n")
+        return EXIT_OK
+    for reason in result.reasons:
+        sys.stdout.write(f"fairness gate: fail, {reason}\n")
+    return EXIT_FLAGGED
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "score":
@@ -346,6 +412,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _load_gate(args)
     if args.command == "report":
         return _report(args)
+    if args.command == "fairness-gate":
+        return _fairness_gate(args)
     try:
         loaded = load_roe(_resolve_path(args.file))
         gate = RoEGate(loaded)
