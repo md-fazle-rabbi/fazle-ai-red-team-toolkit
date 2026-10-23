@@ -1,0 +1,17 @@
+All checks passed!
+54 files already formatted
+Success: no issues found in 39 source files
+........................................................................ [ 22%]
+........................................................................ [ 45%]
+........................................................................ [ 67%]
+........................................................................ [ 90%]
+..............................                                           [100%]
+318 passed in 6.06s
+TOTAL    1005      0    230      0   100%
+
+13 files skipped due to complete coverage.
+report written: proof/report-stub-local.md
+exit=0
+cannot report: suite 'rogue_agent' is not in allowed_suites of the engagement
+exit=3
+ls: cannot access '/tmp/should-not-exist.md': No such file or directory

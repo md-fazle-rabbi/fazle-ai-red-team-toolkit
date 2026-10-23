@@ -9,6 +9,7 @@ import argparse
 import os
 import sys
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
 import uvicorn
@@ -23,6 +24,12 @@ from redteam_toolkit.load_gate import (
     read_locust_stats,
 )
 from redteam_toolkit.proxy import JsonlAudit, create_proxy_app
+from redteam_toolkit.report import (
+    ReportBuildError,
+    RunInput,
+    build_report,
+    parse_run_spec,
+)
 from redteam_toolkit.roe import SUITES, LoadedRoE, RoEError, RoEGate, Target, load_roe
 from redteam_toolkit.scoring import (
     ReportError,
@@ -157,6 +164,19 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument("--before", required=True, help="summary JSON written earlier")
     compare.add_argument("--after", required=True, help="summary JSON to compare to it")
 
+    report = sub.add_parser(
+        "report",
+        parents=[common],
+        help="write a Markdown report from run summaries; sends nothing",
+    )
+    report.add_argument(
+        "--run",
+        action="append",
+        required=True,
+        help="SUITE[:LABEL]=SUMMARY.json, repeat the option for more runs",
+    )
+    report.add_argument("--out", required=True, help="Markdown file to write")
+
     gate = sub.add_parser(
         "load-gate",
         help="check a Locust stats file against thresholds; sends nothing",
@@ -267,6 +287,29 @@ def _compare(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _report(args: argparse.Namespace) -> int:
+    # Why: this only reads local files and writes one report. A missing or invalid
+    # Rules of Engagement file exits with 2, and a summary that cannot be read, or has
+    # nothing evaluated, exits with 3 so an empty run never reads as clean.
+    try:
+        loaded = load_roe(_resolve_path(args.file))
+    except RoEError as exc:
+        sys.stderr.write(f"refused: {exc}\n")
+        return EXIT_REFUSED
+    try:
+        runs = []
+        for spec in args.run:
+            suite, label, path = parse_run_spec(spec)
+            runs.append(RunInput(label, suite, read_summary(Path(path))))
+        text = build_report(loaded, runs, generated_at=datetime.now(UTC))
+        Path(args.out).write_text(text, encoding="utf-8")
+    except (OSError, SummaryError, ReportBuildError) as exc:
+        sys.stderr.write(f"cannot report: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(f"report written: {args.out}\n")
+    return EXIT_OK
+
+
 def _load_gate(args: argparse.Namespace) -> int:
     # Why: this only reads a local file and sends nothing. A run that is empty or too
     # small to judge exits with 3, never 0, so it cannot look like a pass.
@@ -301,6 +344,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _compare(args)
     if args.command == "load-gate":
         return _load_gate(args)
+    if args.command == "report":
+        return _report(args)
     try:
         loaded = load_roe(_resolve_path(args.file))
         gate = RoEGate(loaded)

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### 2026-10-23
+- Added `redteam-toolkit report`, which writes a Markdown report from the Rules of Engagement file and one or more run summaries: engagement details with the file SHA-256, a results table per run, the threat mapping for the suites that ran, and a fixed limitations section. The suite of each run must be in `allowed_suites`. A missing or invalid file exits 2, and an unreadable summary or a run with nothing evaluated exits 3 without writing a report. It holds counts and rates only.
+
 ### 2026-10-22
 - Added the `Load gate` workflow (`.github/workflows/load.yml`). It starts the weak stub and the gated proxy, runs Locust for 20 seconds at 50 users through the proxy and then runs `load-gate` on the stats. Locust is pinned to 2.47.0 and installed in its own environment, not in `uv.lock`. The job writes a window around the current time into a copy of the load example, so it does not fail on a date. No CI measurement exists yet.
 - Added `redteam-toolkit load-gate --stats FILE`, which checks a Locust stats file against a p95 limit (default 2,000 ms) and a failure rate limit (default 1%). It exits 0 on pass, 1 on a breach and 3 when the file cannot be read or the run has too few requests (default floor 100) to be judged, so an empty run never passes. It sends nothing.
