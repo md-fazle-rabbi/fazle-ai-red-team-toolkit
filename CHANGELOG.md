@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### 2026-10-24
+
+- Added `scripts/robustness_audit.py`, which measures a toy classifier on synthetic numbers with IBM ART in its own environment and writes the summary the robustness gate reads.
 - Added `redteam-toolkit robustness-gate --summary FILE`, which checks a synthetic robustness summary. It compares clean accuracy with the accuracy at one epsilon (default 0.1) and exits 0 on pass, 1 when the drop is above the limit (default 0.10) and 3 when the file is unreadable, has fewer than 100 rows or has no measurement at that epsilon. A summary must say `data: synthetic`. It sends nothing. Added `examples/robustness.synthetic-example.json` with made-up numbers.
 
 ### 2026-10-23

@@ -1,0 +1,24 @@
+$ ~/tools/art-env/bin/python scripts/robustness_audit.py --out proof/robustness-synthetic.json
+wrote proof/robustness-synthetic.json (seed=7)
+clean accuracy: 0.9025
+  epsilon 0.05: 0.8845
+  epsilon 0.1: 0.8435
+  epsilon 0.3: 0.5780
+
+$ redteam-toolkit robustness-gate --summary proof/robustness-synthetic.json
+model=logistic_regression attack=fast_gradient_method data=synthetic rows=2000 clean_accuracy=0.9025
+epsilon=0.05 accuracy=0.8845
+epsilon=0.1 accuracy=0.8435
+epsilon=0.3 accuracy=0.5780
+epsilon=0.1 accuracy_drop=0.0590
+robustness gate: pass
+exit=0
+
+$ redteam-toolkit robustness-gate --summary proof/robustness-synthetic.json --epsilon 0.3
+model=logistic_regression attack=fast_gradient_method data=synthetic rows=2000 clean_accuracy=0.9025
+epsilon=0.05 accuracy=0.8845
+epsilon=0.1 accuracy=0.8435
+epsilon=0.3 accuracy=0.5780
+epsilon=0.3 accuracy_drop=0.3245
+robustness gate: fail, accuracy drop 0.3245 at epsilon 0.3 is above 0.1
+exit=1
