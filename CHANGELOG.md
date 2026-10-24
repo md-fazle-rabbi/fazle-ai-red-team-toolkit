@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- The CI `workflow-audit` job now runs zizmor on all of `.github`, so `dependabot.yml` is audited along with the workflow files.
+
 - Added `.github/dependabot.yml`. Dependabot proposes weekly updates for the pinned GitHub Actions and for the locked Python dependencies, each held back for 7 days after release. The tools in their own environments are not covered.
 
 - Updated the limitations in the README. They had said PyRIT and IBM ART were not installed, garak had run only a plumbing probe, and CI ran no red-team tools.
