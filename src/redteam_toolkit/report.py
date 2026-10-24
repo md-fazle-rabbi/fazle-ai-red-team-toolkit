@@ -1,8 +1,9 @@
-"""Build a Markdown report from a Rules of Engagement file and scored run summaries.
+"""Build a Markdown report from a Rules of Engagement file and scored results.
 
-The report holds counts, rates and framework mappings only. Run summaries never carry
-prompt or answer text, so neither does the report. A run with nothing evaluated cannot
-be reported, because a table of zeros would look like a clean result.
+The report holds counts, rates and framework mappings only. Run summaries and the
+fairness summary never carry prompt or answer text, so neither does the report. A run
+with nothing evaluated cannot be reported, and neither can a fairness summary that is
+too thin to judge, because a table of zeros would look like a clean result.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ from redteam_toolkit.threat_map import (
 
 _LABEL: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]{0,39}")
 DEFAULT_LABEL: Final = "run"
+FAIRNESS_SUITE: Final = "bias"
 
 RUN_LIMITATIONS: Final[tuple[str, ...]] = (
     CAVEAT,
@@ -41,21 +43,21 @@ RUN_LIMITATIONS: Final[tuple[str, ...]] = (
 COMMON_LIMITATIONS: Final[tuple[str, ...]] = (
     "Results describe the targets named above during the stated window and nothing "
     "else. A result against a local stub says nothing about another system.",
-    "The STRIDE column is the author's judgement. The ATLAS and OWASP entries are "
+    "The STRIDE entries are the author's judgement. The ATLAS and OWASP entries are "
     "copied from the releases named in the mapping section and may have changed since.",
     "This report comes from the toolkit's own checks. It is not an audit, a "
     "certification or proof that no weakness exists.",
     "The report holds counts and rates only. It contains no prompt text and no "
     "answer text.",
 )
-LIMITATIONS: Final[tuple[str, ...]] = RUN_LIMITATIONS + COMMON_LIMITATIONS
 FAIRNESS_LIMITATIONS: Final[tuple[str, ...]] = (
     "The fairness figures come from synthetic data and a stand-in model. They say "
-    "nothing about any other system.",
-    "The fairness limits are policy values the author chose, not measured ones. The "
-    "check compares group rates and does not say why a gap exists.",
+    "nothing about any real system or any real person.",
+    "The fairness limits are policy values I chose, not measured ones. A small gap "
+    "does not show a system is fair, and a large gap does not say why it exists.",
 )
-FAIRNESS_SUITE: Final = "bias"
+# Kept as one tuple for callers that want every fixed run limitation.
+LIMITATIONS: Final[tuple[str, ...]] = RUN_LIMITATIONS + COMMON_LIMITATIONS
 
 
 class ReportBuildError(ValueError):
@@ -92,18 +94,23 @@ def _percent(rate: float | None) -> str:
     return "n/a" if rate is None else f"{rate * 100:.1f}%"
 
 
+def _rate(rate: float | None) -> str:
+    return "n/a" if rate is None else f"{rate:.4f}"
+
+
 def _check(
     loaded: LoadedRoE, runs: Sequence[RunInput], fairness: FairnessSummary | None
 ) -> None:
     if not runs and fairness is None:
-        raise ReportBuildError("no runs or fairness summary were given")
-    if fairness is not None and FAIRNESS_SUITE not in loaded.roe.allowed_suites:
+        raise ReportBuildError("no runs were given")
+    allowed = loaded.roe.allowed_suites
+    if fairness is not None and FAIRNESS_SUITE not in allowed:
         raise ReportBuildError(
             f"suite {FAIRNESS_SUITE!r} is not in allowed_suites of the engagement"
         )
     seen: set[tuple[str, str]] = set()
     for run in runs:
-        if run.suite not in loaded.roe.allowed_suites:
+        if run.suite not in allowed:
             raise ReportBuildError(
                 f"suite {run.suite!r} is not in allowed_suites of the engagement"
             )
@@ -186,31 +193,35 @@ def _fairness_section(summary: FairnessSummary) -> list[str]:
         result = evaluate(summary)
     except FairnessError as exc:
         raise ReportBuildError(f"the fairness summary cannot be judged: {exc}") from exc
+    outcome = (
+        "both differences are within their limits."
+        if result.passed
+        else "; ".join(result.reasons) + "."
+    )
     lines = [
-        f"### Group fairness ({FAIRNESS_SUITE})",
+        "### Group fairness (bias)",
         "",
-        f"Data: {summary.data}. Attribute: {_cell(summary.attribute)}.",
+        f"Attribute: {summary.attribute}. Data: {summary.data}.",
         "",
-        "| group | rows | selection rate | true positive rate | false positive rate |",
+        "| group | count | selection rate | true positive rate | false positive rate |",
         "| --- | ---: | ---: | ---: | ---: |",
     ]
-    for g in summary.groups:
-        tpr = "n/a" if g.true_positive_rate is None else f"{g.true_positive_rate:.4f}"
-        fpr = "n/a" if g.false_positive_rate is None else f"{g.false_positive_rate:.4f}"
+    for group in summary.groups:
         lines.append(
-            f"| {_cell(g.group)} | {g.count} | {g.selection_rate:.4f} | {tpr} | {fpr} |"
+            f"| {group.group} | {group.count} | {_rate(group.selection_rate)} | "
+            f"{_rate(group.true_positive_rate)} | "
+            f"{_rate(group.false_positive_rate)} |"
         )
     lines += [
         "",
         f"Demographic parity difference: {result.parity_difference:.4f} "
-        f"(limit {DEFAULT_MAX_PARITY_DIFFERENCE:g}). "
+        f"(limit {DEFAULT_MAX_PARITY_DIFFERENCE:g}).",
+        "",
         f"Equalized odds difference: {result.equalized_odds_difference:.4f} "
         f"(limit {DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE:g}).",
+        "",
+        f"Result: {outcome}",
     ]
-    if result.passed:
-        lines.append("Result: both differences are within their limits.")
-    else:
-        lines += [f"Result: {reason}." for reason in result.reasons]
     return lines
 
 
@@ -243,6 +254,26 @@ def _mapping(suites: Sequence[str]) -> list[str]:
     return lines[:-1]
 
 
+def _overview(
+    runs: Sequence[RunInput], suites: Sequence[str], fairness: FairnessSummary | None
+) -> list[str]:
+    lines: list[str] = []
+    if runs:
+        evaluated = sum(run.summary.evaluated for run in runs)
+        flagged = sum(run.summary.flagged for run in runs)
+        covered = ", ".join(dict.fromkeys(run.suite for run in runs))
+        lines.append(
+            f"{len(runs)} run(s) covering {covered}. {evaluated} attempts were "
+            f"evaluated. Flagged by at least one detector: {flagged}."
+        )
+    if fairness is not None:
+        lines.append(
+            f"A group fairness summary over {len(fairness.groups)} groups is included."
+        )
+    lines.append(f"Suites covered: {', '.join(suites)}.")
+    return lines
+
+
 def build_report(
     loaded: LoadedRoE,
     runs: Sequence[RunInput],
@@ -251,21 +282,9 @@ def build_report(
     fairness: FairnessSummary | None = None,
 ) -> str:
     _check(loaded, runs, fairness)
-    evaluated = sum(run.summary.evaluated for run in runs)
-    flagged = sum(run.summary.flagged for run in runs)
     suites = list(dict.fromkeys(run.suite for run in runs))
-    overview: list[str] = []
-    if runs:
-        overview.append(
-            f"{len(runs)} run(s) covering {', '.join(suites)}. {evaluated} attempts "
-            f"were evaluated. Flagged by at least one detector: {flagged}."
-        )
-    if fairness is not None:
-        overview.append(
-            f"A group fairness summary over {len(fairness.groups)} groups is included."
-        )
-        if FAIRNESS_SUITE not in suites:
-            suites.append(FAIRNESS_SUITE)
+    if fairness is not None and FAIRNESS_SUITE not in suites:
+        suites.append(FAIRNESS_SUITE)
     lines = [
         f"# Red team report: {loaded.roe.engagement_id}",
         "",
@@ -273,7 +292,7 @@ def build_report(
         "",
         "## Overview",
         "",
-        " ".join(overview),
+        *_overview(runs, suites, fairness),
         "",
         *_engagement(loaded),
         "",
