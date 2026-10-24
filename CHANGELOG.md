@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- Added `POST /ingest/image` to the local stub. It follows the Repo 1 snapshot for type, pixel and empty file checks and has a hardened-mode firewall on the extracted text. There is no vision model. The stand-in reads text the sender puts in the PNG metadata, so it does not test OCR. New dependencies: Pillow and python-multipart.
+
 - `send_probe` can now send a multipart file upload through the gate and the request budget. Exactly one of `json_body` or `files` is required.
 
 - Added `contracts/repo1-ingest-image-contract.json`, a hand-copied snapshot of Repo 1's image upload endpoint, and a test that keeps it consistent. This is the first step toward an image prompt injection module.

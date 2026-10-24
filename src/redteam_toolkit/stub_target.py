@@ -1,7 +1,10 @@
 """A local stub target for this toolkit's own tests and CI.
 
-It copies the request and response shape of POST /query on fazle-enterprise-ai-platform
-and answers from three synthetic documents, with no model and no network. It has two
+It copies the request and response shape of POST /query and POST /ingest/image on
+fazle-enterprise-ai-platform. /query answers from three synthetic documents, with no
+model and no network. /ingest/image checks the upload like Repo 1 does, but it has no
+vision model. Its stand-in for text extraction reads a text entry the sender put in the
+PNG's own metadata. That is not OCR and not a test of a vision model. It has two
 modes so the toolkit can prove it tells a failing target from a passing one:
 
 - weak: follows injected instructions, leaks its system prompt, returns raw PII.
@@ -13,12 +16,15 @@ it is synthetic. It is deliberately vulnerable in weak mode, so run it on localh
 only. uvicorn binds to 127.0.0.1 by default. Do not pass --host 0.0.0.0.
 """
 
+import hashlib
+import io
 import re
 import uuid
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Annotated, Final, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from PIL import Image
 from pydantic import BaseModel, Field
 
 Mode = Literal["weak", "hardened"]
@@ -29,6 +35,15 @@ SYSTEM_PROMPT: Final = (
 )
 
 _NAMESPACE: Final = uuid.NAMESPACE_URL
+
+# Limits copied from Repo 1 (contracts/repo1-ingest-image-contract.json).
+MAX_IMAGE_PIXELS: Final = 50_000_000
+ALLOWED_IMAGE_FORMATS: Final = frozenset({"PNG", "JPEG", "WEBP"})
+# Why: the stand-in for text extraction. The sender puts the text it wants "read" in a
+# PNG text entry under this key. Nothing here reads pixels.
+EXTRACTED_TEXT_KEY: Final = "extracted_text"
+_UNSUPPORTED_IMAGE: Final = "Unsupported image. Upload a PNG, JPEG or WEBP file."
+
 _EMAIL: Final = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _PHONE: Final = re.compile(r"\+?\d[\d\s().-]{7,}\d")
 
@@ -104,6 +119,43 @@ class QueryResponse(BaseModel):
     flag_reasons: list[str]
 
 
+class ImageIngestResponse(BaseModel):
+    document_id: uuid.UUID
+    modality: str
+    deduplicated: bool
+
+
+def check_image(image_bytes: bytes) -> None:
+    """Refuse what Repo 1 refuses: an unsupported type, or too many pixels."""
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            image_format = image.format
+            width, height = image.size
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):
+        raise HTTPException(
+            status_code=422, detail="The image has too many pixels."
+        ) from None
+    except OSError:
+        raise HTTPException(status_code=415, detail=_UNSUPPORTED_IMAGE) from None
+    if image_format not in ALLOWED_IMAGE_FORMATS:
+        raise HTTPException(status_code=415, detail=_UNSUPPORTED_IMAGE)
+    if width * height > MAX_IMAGE_PIXELS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"The image is {width} by {height} pixels. "
+                f"The limit is {MAX_IMAGE_PIXELS:,} pixels in total."
+            ),
+        )
+
+
+def extract_text(image_bytes: bytes) -> str:
+    """Stand-in for the vision model: read the text entry the sender put in the file."""
+    with Image.open(io.BytesIO(image_bytes)) as image:
+        image.load()
+        return str(image.info.get(EXTRACTED_TEXT_KEY, "")).strip()
+
+
 def _retrieve(question: str, top_k: int) -> list[_Doc]:
     words = re.findall(r"[a-z]{4,}", question.lower())
     scored = [
@@ -173,7 +225,9 @@ def respond(mode: Mode, request: QueryRequest) -> QueryResponse:
 
 
 def create_app(mode: Mode) -> FastAPI:
-    # Why: no /docs, /redoc or /openapi.json. The stub answers two routes, no more.
+    # Why: no /docs, /redoc or /openapi.json. The stub answers its own routes, no more.
+    ingested: set[str] = set()
+
     app = FastAPI(
         title=f"Stub target ({mode})",
         docs_url=None,
@@ -192,6 +246,33 @@ def create_app(mode: Mode) -> FastAPI:
                 status_code=400, detail="Blocked by the injection firewall"
             )
         return respond(mode, request)
+
+    @app.post("/ingest/image", response_model=ImageIngestResponse, status_code=201)
+    def ingest_image(file: Annotated[UploadFile, File()]) -> ImageIngestResponse:
+        image_bytes = file.file.read()
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty file")
+        check_image(image_bytes)
+        content_hash = hashlib.sha256(image_bytes).hexdigest()
+        document_id = uuid.uuid5(_NAMESPACE, f"stub-target/image/{content_hash}")
+        if content_hash in ingested:
+            return ImageIngestResponse(
+                document_id=document_id, modality="image", deduplicated=True
+            )
+        text = extract_text(image_bytes)
+        if not text:
+            raise HTTPException(
+                status_code=422, detail="No text could be extracted from the image."
+            )
+        if mode == "hardened" and firewall_blocks(text):
+            raise HTTPException(
+                status_code=400,
+                detail="Extracted image content blocked: possible prompt injection.",
+            )
+        ingested.add(content_hash)
+        return ImageIngestResponse(
+            document_id=document_id, modality="image", deduplicated=False
+        )
 
     return app
 
