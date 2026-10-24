@@ -191,7 +191,8 @@ uv run pytest --cov --cov-fail-under=90
 - IBM ART 1.20.1 runs in its own environment on Python 3.13. Its package metadata lists
   Python 3.10 to 3.12 and not 3.13, so that is a use outside what the package states.
   Only one numeric attack on synthetic numbers has run. PyRIT has its own environment
-  and is not used in CI. DeepTeam is not installed.
+  and is not used in CI. DeepTeam is not installed, see
+  [ADR-014](docs/adr/ADR-014-leave-deepteam-out-for-now.md).
 - garak 0.17.1 is installed in its own environment outside this repository. It has run
   seven stock probes at a cap of 8 prompts each through the gated proxy, against the
   weak and the hardened stub, 80 requests per run. That is a small sample and not a

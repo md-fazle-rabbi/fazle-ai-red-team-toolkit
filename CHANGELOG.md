@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- Added ADR-014. DeepTeam stays out for now and the attack tools are garak and PyRIT. I could not confirm a way to run DeepTeam without a paid API, and the ADR records that as open.
+
 - The CI `workflow-audit` job now runs zizmor on all of `.github`, so `dependabot.yml` is audited along with the workflow files.
 
 - Added `.github/dependabot.yml`. Dependabot proposes weekly updates for the pinned GitHub Actions and for the locked Python dependencies, each held back for 7 days after release. The tools in their own environments are not covered.
