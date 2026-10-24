@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- Added `contracts/repo1-ingest-image-contract.json`, a hand-copied snapshot of Repo 1's image upload endpoint, and a test that keeps it consistent. This is the first step toward an image prompt injection module.
+
 - Added ADR-014. DeepTeam stays out for now and the attack tools are garak and PyRIT. I could not confirm a way to run DeepTeam without a paid API, and the ADR records that as open.
 
 - The CI `workflow-audit` job now runs zizmor on all of `.github`, so `dependabot.yml` is audited along with the workflow files.

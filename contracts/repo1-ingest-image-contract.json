@@ -1,0 +1,41 @@
+{
+  "note": "Hand-copied from Repo 1 at the commit below. Nothing refreshes this file. It checks the stub against this snapshot, not against Repo 1 as it is today. Authentication and tenant headers are not modelled.",
+  "source": {
+    "repo": "fazle-enterprise-ai-platform",
+    "commit": "715a93348caa736f4d53ba760fce318cdd741614",
+    "router_file": "packages/rag-engine/src/rag_engine/routers/ingest_image.py",
+    "limits_file": "packages/rag-engine/src/rag_engine/upload_limits.py"
+  },
+  "endpoint": {
+    "method": "POST",
+    "path": "/ingest/image",
+    "content_type": "multipart/form-data",
+    "file_field": "file"
+  },
+  "limits": {
+    "max_image_bytes": 8388608,
+    "max_image_pixels": 50000000,
+    "allowed_formats": ["JPEG", "PNG", "WEBP"],
+    "multipart_overhead_bytes": 65536,
+    "max_body_bytes": 8454144
+  },
+  "response": {
+    "status_code": 201,
+    "fields": {
+      "document_id": "uuid",
+      "modality": "string",
+      "deduplicated": "boolean"
+    }
+  },
+  "errors": {
+    "400": [
+      "Empty file",
+      "Extracted image content blocked: possible prompt injection."
+    ],
+    "415": ["Unsupported image. Upload a PNG, JPEG or WEBP file."],
+    "422": [
+      "The image has too many pixels.",
+      "The image is {width} by {height} pixels. The limit is 50,000,000 pixels in total."
+    ]
+  }
+}
