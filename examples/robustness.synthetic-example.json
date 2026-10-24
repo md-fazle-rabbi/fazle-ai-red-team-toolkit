@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "data": "synthetic",
+  "model": "logistic_regression",
+  "attack": "fast_gradient_method",
+  "rows": 2000,
+  "clean_accuracy": 0.9,
+  "points": [
+    { "epsilon": 0.05, "accuracy": 0.87 },
+    { "epsilon": 0.1, "accuracy": 0.84 },
+    { "epsilon": 0.3, "accuracy": 0.7 }
+  ]
+}

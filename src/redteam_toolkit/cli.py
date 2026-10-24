@@ -39,6 +39,15 @@ from redteam_toolkit.report import (
     build_report,
     parse_run_spec,
 )
+from redteam_toolkit.robustness import (
+    DEFAULT_EPSILON,
+    DEFAULT_MAX_ACCURACY_DROP,
+    DEFAULT_MIN_ROWS,
+    RobustnessError,
+    evaluate_robustness,
+    format_points,
+    read_robustness_summary,
+)
 from redteam_toolkit.roe import SUITES, LoadedRoE, RoEError, RoEGate, Target, load_roe
 from redteam_toolkit.scoring import (
     ReportError,
@@ -251,6 +260,33 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MIN_GROUP_SIZE,
         help=f"fewest rows a group needs (default: {DEFAULT_MIN_GROUP_SIZE})",
     )
+
+    robust = sub.add_parser(
+        "robustness-gate",
+        help="check a robustness summary against an accuracy drop; sends nothing",
+    )
+    robust.add_argument("--summary", required=True, help="robustness summary JSON")
+    robust.add_argument(
+        "--epsilon",
+        type=_positive,
+        default=DEFAULT_EPSILON,
+        help=f"perturbation size to judge (default: {DEFAULT_EPSILON:g})",
+    )
+    robust.add_argument(
+        "--max-accuracy-drop",
+        type=_rate,
+        default=DEFAULT_MAX_ACCURACY_DROP,
+        help=(
+            "largest allowed fall from clean accuracy "
+            f"(default: {DEFAULT_MAX_ACCURACY_DROP:g})"
+        ),
+    )
+    robust.add_argument(
+        "--min-rows",
+        type=int,
+        default=DEFAULT_MIN_ROWS,
+        help=f"fewest rows needed to judge (default: {DEFAULT_MIN_ROWS})",
+    )
     return parser
 
 
@@ -409,6 +445,32 @@ def _fairness_gate(args: argparse.Namespace) -> int:
     return EXIT_FLAGGED
 
 
+def _robustness_gate(args: argparse.Namespace) -> int:
+    # Why: this only reads a local file and sends nothing. A summary that cannot be
+    # judged exits with 3, never 0, so it cannot look like a pass.
+    try:
+        summary = read_robustness_summary(Path(args.summary))
+        result = evaluate_robustness(
+            summary,
+            epsilon=args.epsilon,
+            max_accuracy_drop=args.max_accuracy_drop,
+            min_rows=args.min_rows,
+        )
+    except (OSError, RobustnessError) as exc:
+        sys.stderr.write(f"cannot judge: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(format_points(summary))
+    sys.stdout.write(
+        f"epsilon={result.epsilon:g} accuracy_drop={result.accuracy_drop:.4f}\n"
+    )
+    if result.passed:
+        sys.stdout.write("robustness gate: pass\n")
+        return EXIT_OK
+    for reason in result.reasons:
+        sys.stdout.write(f"robustness gate: fail, {reason}\n")
+    return EXIT_FLAGGED
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "score":
@@ -421,6 +483,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _report(args)
     if args.command == "fairness-gate":
         return _fairness_gate(args)
+    if args.command == "robustness-gate":
+        return _robustness_gate(args)
     try:
         loaded = load_roe(_resolve_path(args.file))
         gate = RoEGate(loaded)

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### 2026-10-24
+- Added `redteam-toolkit robustness-gate --summary FILE`, which checks a synthetic robustness summary. It compares clean accuracy with the accuracy at one epsilon (default 0.1) and exits 0 on pass, 1 when the drop is above the limit (default 0.10) and 3 when the file is unreadable, has fewer than 100 rows or has no measurement at that epsilon. A summary must say `data: synthetic`. It sends nothing. Added `examples/robustness.synthetic-example.json` with made-up numbers.
+
 ### 2026-10-23
 - `redteam-toolkit report` takes an optional `--fairness SUMMARY.json` and adds a group fairness section with the group table, both differences against their limits and the result, plus the `bias` threat mapping and two fairness limitations. The engagement must allow the `bias` suite. `--run` is now optional, but a report needs a run or a fairness summary. A fairness-only report leaves out the limitations about answered attempts and detectors. Added `examples/roe.stub-bias.toml`.
 - Added `scripts/fairness_audit.py`, which runs in a separate Fairlearn and SHAP environment, builds seeded synthetic data, trains a small logistic regression and writes the summary that `fairness-gate` reads. `--bias` sets how strongly the label leans on a feature correlated with the group. SHAP values are printed and not judged. The package does not import Fairlearn or SHAP.

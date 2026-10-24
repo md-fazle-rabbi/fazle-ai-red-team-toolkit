@@ -1,0 +1,29 @@
+All checks passed!
+61 files already formatted
+Success: no issues found in 44 source files
+........................................................................ [ 18%]
+........................................................................ [ 37%]
+........................................................................ [ 55%]
+........................................................................ [ 74%]
+........................................................................ [ 92%]
+.............................                                            [100%]
+389 passed in 6.43s
+TOTAL    1238      0    278      0   100%
+
+15 files skipped due to complete coverage.
+model=logistic_regression attack=fast_gradient_method data=synthetic rows=2000 clean_accuracy=0.9000
+epsilon=0.05 accuracy=0.8700
+epsilon=0.1 accuracy=0.8400
+epsilon=0.3 accuracy=0.7000
+epsilon=0.1 accuracy_drop=0.0600
+robustness gate: pass
+exit=0
+model=logistic_regression attack=fast_gradient_method data=synthetic rows=2000 clean_accuracy=0.9000
+epsilon=0.05 accuracy=0.8700
+epsilon=0.1 accuracy=0.8400
+epsilon=0.3 accuracy=0.7000
+epsilon=0.3 accuracy_drop=0.2000
+robustness gate: fail, accuracy drop 0.2000 at epsilon 0.3 is above 0.1
+exit=1
+cannot judge: no measurement at epsilon 0.2 (measured: 0.05, 0.1, 0.3)
+exit=3
