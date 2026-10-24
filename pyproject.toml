@@ -1,7 +1,7 @@
 [build-system]
 # Why: uv_build is uv's own build backend. The upper bound is the next minor release,
 # because uv_build is versioned together with uv and a new minor can change behaviour.
-requires = ["uv_build>=0.12.21,<0.13.0"]
+requires = ["uv_build>=0.12.21,<0.14.0"]
 build-backend = "uv_build"
 
 [project]
