@@ -1,9 +1,10 @@
 """Build a Markdown report from a Rules of Engagement file and scored results.
 
-The report holds counts, rates and framework mappings only. Run summaries and the
-fairness summary never carry prompt or answer text, so neither does the report. A run
-with nothing evaluated cannot be reported, and neither can a fairness summary that is
-too thin to judge, because a table of zeros would look like a clean result.
+The report holds counts, rates and framework mappings only. Run summaries, the
+fairness summary and the robustness summary never carry prompt or answer text, so
+neither does the report. A run with nothing evaluated cannot be reported, and neither
+can a fairness or robustness summary that is too thin to judge, because a table of
+zeros would look like a clean result.
 """
 
 from __future__ import annotations
@@ -21,6 +22,13 @@ from redteam_toolkit.fairness import (
     FairnessSummary,
     evaluate,
 )
+from redteam_toolkit.robustness import (
+    DEFAULT_EPSILON,
+    DEFAULT_MAX_ACCURACY_DROP,
+    RobustnessError,
+    RobustnessSummary,
+    evaluate_robustness,
+)
 from redteam_toolkit.roe import SUITES, LoadedRoE
 from redteam_toolkit.summary import CAVEAT, RunSummary
 from redteam_toolkit.threat_map import (
@@ -34,6 +42,8 @@ from redteam_toolkit.threat_map import (
 _LABEL: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]{0,39}")
 DEFAULT_LABEL: Final = "run"
 FAIRNESS_SUITE: Final = "bias"
+ROBUSTNESS_SUITE: Final = "adversarial_ml"
+_DROP_DIGITS: Final = 6
 
 RUN_LIMITATIONS: Final[tuple[str, ...]] = (
     CAVEAT,
@@ -55,6 +65,13 @@ FAIRNESS_LIMITATIONS: Final[tuple[str, ...]] = (
     "nothing about any real system or any real person.",
     "The fairness limits are policy values I chose, not measured ones. A small gap "
     "does not show a system is fair, and a large gap does not say why it exists.",
+)
+ROBUSTNESS_LIMITATIONS: Final[tuple[str, ...]] = (
+    "The robustness figures come from synthetic numbers, a stand-in model and one "
+    "numeric attack. They say nothing about any real system or any real person.",
+    "The accuracy drop limit is a policy value I chose, not a measured one. A small "
+    "drop does not show a model is robust, and a large drop does not say why it "
+    "happens.",
 )
 # Kept as one tuple for callers that want every fixed run limitation.
 LIMITATIONS: Final[tuple[str, ...]] = RUN_LIMITATIONS + COMMON_LIMITATIONS
@@ -99,14 +116,21 @@ def _rate(rate: float | None) -> str:
 
 
 def _check(
-    loaded: LoadedRoE, runs: Sequence[RunInput], fairness: FairnessSummary | None
+    loaded: LoadedRoE,
+    runs: Sequence[RunInput],
+    fairness: FairnessSummary | None,
+    robustness: RobustnessSummary | None,
 ) -> None:
-    if not runs and fairness is None:
+    if not runs and fairness is None and robustness is None:
         raise ReportBuildError("no runs were given")
     allowed = loaded.roe.allowed_suites
     if fairness is not None and FAIRNESS_SUITE not in allowed:
         raise ReportBuildError(
             f"suite {FAIRNESS_SUITE!r} is not in allowed_suites of the engagement"
+        )
+    if robustness is not None and ROBUSTNESS_SUITE not in allowed:
+        raise ReportBuildError(
+            f"suite {ROBUSTNESS_SUITE!r} is not in allowed_suites of the engagement"
         )
     seen: set[tuple[str, str]] = set()
     for run in runs:
@@ -225,6 +249,42 @@ def _fairness_section(summary: FairnessSummary) -> list[str]:
     return lines
 
 
+def _robustness_section(summary: RobustnessSummary) -> list[str]:
+    try:
+        result = evaluate_robustness(summary)
+    except RobustnessError as exc:
+        raise ReportBuildError(
+            f"the robustness summary cannot be judged: {exc}"
+        ) from exc
+    outcome = (
+        "the accuracy drop is within the limit."
+        if result.passed
+        else "; ".join(result.reasons) + "."
+    )
+    lines = [
+        "### Adversarial robustness (adversarial_ml)",
+        "",
+        f"Model: {summary.model}. Attack: {summary.attack}. Data: {summary.data}. "
+        f"Rows: {summary.rows}.",
+        "",
+        "| epsilon | accuracy | drop from clean |",
+        "| --- | ---: | ---: |",
+        f"| none (clean) | {summary.clean_accuracy:.4f} | 0.0000 |",
+    ]
+    for point in summary.points:
+        # Why: adding 0.0 turns a rounded negative zero into a plain zero.
+        drop = round(summary.clean_accuracy - point.accuracy, _DROP_DIGITS) + 0.0
+        lines.append(f"| {point.epsilon:g} | {point.accuracy:.4f} | {drop:.4f} |")
+    lines += [
+        "",
+        f"Accuracy drop at epsilon {DEFAULT_EPSILON:g}: {result.accuracy_drop:.4f} "
+        f"(limit {DEFAULT_MAX_ACCURACY_DROP:g}).",
+        "",
+        f"Result: {outcome}",
+    ]
+    return lines
+
+
 def _mapping(suites: Sequence[str]) -> list[str]:
     lines = [
         "## Threat mapping",
@@ -255,7 +315,10 @@ def _mapping(suites: Sequence[str]) -> list[str]:
 
 
 def _overview(
-    runs: Sequence[RunInput], suites: Sequence[str], fairness: FairnessSummary | None
+    runs: Sequence[RunInput],
+    suites: Sequence[str],
+    fairness: FairnessSummary | None,
+    robustness: RobustnessSummary | None,
 ) -> list[str]:
     lines: list[str] = []
     if runs:
@@ -270,6 +333,11 @@ def _overview(
         lines.append(
             f"A group fairness summary over {len(fairness.groups)} groups is included."
         )
+    if robustness is not None:
+        lines.append(
+            f"A robustness summary over {len(robustness.points)} perturbation "
+            "sizes is included."
+        )
     lines.append(f"Suites covered: {', '.join(suites)}.")
     return lines
 
@@ -280,11 +348,14 @@ def build_report(
     *,
     generated_at: datetime,
     fairness: FairnessSummary | None = None,
+    robustness: RobustnessSummary | None = None,
 ) -> str:
-    _check(loaded, runs, fairness)
+    _check(loaded, runs, fairness, robustness)
     suites = list(dict.fromkeys(run.suite for run in runs))
     if fairness is not None and FAIRNESS_SUITE not in suites:
         suites.append(FAIRNESS_SUITE)
+    if robustness is not None and ROBUSTNESS_SUITE not in suites:
+        suites.append(ROBUSTNESS_SUITE)
     lines = [
         f"# Red team report: {loaded.roe.engagement_id}",
         "",
@@ -292,7 +363,7 @@ def build_report(
         "",
         "## Overview",
         "",
-        *_overview(runs, suites, fairness),
+        *_overview(runs, suites, fairness, robustness),
         "",
         *_engagement(loaded),
         "",
@@ -303,10 +374,13 @@ def build_report(
         lines += [*_run_section(run), ""]
     if fairness is not None:
         lines += [*_fairness_section(fairness), ""]
+    if robustness is not None:
+        lines += [*_robustness_section(robustness), ""]
     limitations = (
         (RUN_LIMITATIONS if runs else ())
         + COMMON_LIMITATIONS
         + (FAIRNESS_LIMITATIONS if fairness is not None else ())
+        + (ROBUSTNESS_LIMITATIONS if robustness is not None else ())
     )
     lines += [*_mapping(suites), "", "## Limitations", ""]
     lines += [f"- {item}" for item in limitations]

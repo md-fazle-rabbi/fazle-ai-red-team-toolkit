@@ -1,0 +1,48 @@
+# Rules of Engagement for self testing of the local stub target with the prompt
+# injection and adversarial machine learning suites. The adversarial_ml suite covers the
+# synthetic robustness check (see README). Copy this file into engagements/ (git-ignored)
+# and edit it. Do not put secrets here. The limits are what the code allows, not a
+# measured safe rate for anything.
+
+schema_version = 1
+engagement_id = "stub-ml-selftest"
+allowed_suites = ["prompt_injection", "adversarial_ml"]
+
+[client]
+name = "Fazle Rabbi (self test)"
+
+[authorized_by]
+name = "Fazle Rabbi"
+role = "System owner"
+email = "mfrabbi.ai@gmail.com"
+
+[operator]
+name = "Fazle Rabbi"
+role = "Operator"
+email = "mfrabbi.ai@gmail.com"
+
+# Every date-time needs a UTC offset. The end is exclusive. The longest window is 31 days.
+[window]
+start = 2026-10-23T00:00:00+06:00
+end = 2026-11-20T00:00:00+06:00
+
+[limits]
+requests_per_minute = 60
+total_requests = 1000
+concurrency = 5
+
+[authorization]
+kind = "self_owned"
+reference = "Own synthetic stub target, local machine only"
+
+[stop_contact]
+name = "Fazle Rabbi"
+role = "Operator"
+email = "mfrabbi.ai@gmail.com"
+
+[[targets]]
+id = "stub-weak-local"
+base_url = "http://127.0.0.1:8010"
+allowed_paths = ["/query"]
+environment = "local"
+real_personal_data = false

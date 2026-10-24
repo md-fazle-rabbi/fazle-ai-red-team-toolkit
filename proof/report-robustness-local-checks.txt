@@ -1,0 +1,18 @@
+$ pytest, ruff, mypy
+Name    Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------
+TOTAL    1264      0    288      0   100%
+
+15 files skipped due to complete coverage.
+400 passed in 3.06s
+All checks passed!
+63 files already formatted
+Success: no issues found in 45 source files
+
+$ redteam-toolkit report --file examples/roe.stub-ml.toml --robustness proof/robustness-synthetic.json --out proof/report-robustness.md
+report written: proof/report-robustness.md
+exit=0
+
+$ same command with a robustness file that does not exist
+cannot report: [Errno 2] No such file or directory: 'proof/nope.json'
+exit=3

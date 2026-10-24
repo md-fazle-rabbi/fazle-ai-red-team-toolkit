@@ -197,6 +197,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--fairness",
         help="fairness summary JSON to add as a group fairness section",
     )
+    report.add_argument(
+        "--robustness",
+        help="robustness summary JSON to add as a robustness section",
+    )
     report.add_argument("--out", required=True, help="Markdown file to write")
 
     gate = sub.add_parser(
@@ -381,11 +385,24 @@ def _report(args: argparse.Namespace) -> int:
             suite, label, path = parse_run_spec(spec)
             runs.append(RunInput(label, suite, read_summary(Path(path))))
         fairness = read_fairness_summary(Path(args.fairness)) if args.fairness else None
+        robustness = (
+            read_robustness_summary(Path(args.robustness)) if args.robustness else None
+        )
         text = build_report(
-            loaded, runs, generated_at=datetime.now(UTC), fairness=fairness
+            loaded,
+            runs,
+            generated_at=datetime.now(UTC),
+            fairness=fairness,
+            robustness=robustness,
         )
         Path(args.out).write_text(text, encoding="utf-8")
-    except (OSError, SummaryError, FairnessError, ReportBuildError) as exc:
+    except (
+        OSError,
+        SummaryError,
+        FairnessError,
+        RobustnessError,
+        ReportBuildError,
+    ) as exc:
         sys.stderr.write(f"cannot report: {exc}\n")
         return EXIT_UNSCORABLE
     sys.stdout.write(f"report written: {args.out}\n")
