@@ -5,14 +5,15 @@ and this module sends nothing if the request is not authorized. There is no
 path in this module that reaches the network without going through permit.
 
 This module does no scoring and ships no attack content of its own. It is
-plumbing: given a URL and a JSON body, send it, catch the connection failure
-modes, and return what happened. The caller decides what to send and what
-the result means.
+plumbing: given a URL and a JSON body or a file upload, send it, catch the
+connection failure modes, and return what happened. The caller decides what to
+send and what the result means.
 """
 
 from __future__ import annotations
 
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -41,18 +42,27 @@ class ProbeResult:
         return self.error is None and self.status_code is not None
 
 
+# A multipart upload: field name -> (file name, bytes, content type).
+FileParts = Mapping[str, tuple[str, bytes, str]]
+
+
 def send_probe(
     gate: RoEGate,
     *,
     target_id: str,
     suite: str,
     url: str,
-    json_body: dict[str, Any],
+    json_body: dict[str, Any] | None = None,
+    files: FileParts | None = None,
     client: httpx2.Client | None = None,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     budget: RequestBudget | None = None,
 ) -> ProbeResult:
     """Check the gate, then send one POST request. Never raises on a network error.
+
+    Send exactly one of json_body (a JSON request) or files (a multipart upload).
+    Giving both or neither raises ValueError before the gate is asked, so nothing is
+    charged and nothing is sent.
 
     Raises RoEViolationError if the gate refuses. That is a programming error in
     the caller, not a result to record, so it is not caught here. With a budget,
@@ -60,6 +70,8 @@ def send_probe(
     RoEViolationError) once the file's total_requests is used up. The budget is
     only charged after the gate allows the request, so a refusal costs nothing.
     """
+    if (json_body is None) == (files is None):
+        raise ValueError("give exactly one of json_body or files")
     gate.permit(target_id=target_id, suite=suite, url=url)
     if budget is not None:
         budget.acquire()
@@ -69,7 +81,11 @@ def send_probe(
     )
     started = time.monotonic()
     try:
-        response = http_client.post(url, json=json_body)
+        response = (
+            http_client.post(url, json=json_body)
+            if files is None
+            else http_client.post(url, files=dict(files))
+        )
     except httpx2.HTTPError as exc:
         return ProbeResult(
             target_id=target_id,
