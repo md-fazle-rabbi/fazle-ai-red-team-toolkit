@@ -23,7 +23,7 @@ email = "mfrabbi.ai@gmail.com"
 # Every date-time needs a UTC offset. The end is exclusive. The longest window is 31 days.
 [window]
 start = 2026-10-19T00:00:00+06:00
-end = 2026-10-26T00:00:00+06:00
+end = 2026-11-19T00:00:00+06:00
 
 # The stub is local, synthetic and has no rate limit of its own, so these ceilings
 # are only what the code allows, not a measured safe rate for anything real.

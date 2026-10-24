@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- Moved the end dates of `examples/roe.stub-local.toml` and `examples/roe.repo1-local.toml` out to the 31-day maximum. Both examples stop working after those dates and need new dates then.
+
 - The `report` command takes `--robustness` and adds an adversarial robustness section for the `adversarial_ml` suite. The section needs a measurement at epsilon 0.1 and at least 100 rows, or the report exits with 3. Added `examples/roe.stub-ml.toml`.
 
 - Added `scripts/robustness_audit.py`, which measures a toy classifier on synthetic numbers with IBM ART in its own environment and writes the summary the robustness gate reads.

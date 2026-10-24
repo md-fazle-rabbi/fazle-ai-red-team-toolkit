@@ -1,0 +1,8 @@
+TOTAL    1264      0    288      0   100%
+
+15 files skipped due to complete coverage.
+400 passed in 2.86s
+valid: engagement=stub-local-selftest roe_sha256=be49e45e595ddcb825259fd7c33e034ed7132bd49be048154fecba9b390459b6
+exit=0
+valid: engagement=repo1-local-selftest roe_sha256=8711068dfe3a9fac4b0cefcb8dd1b0bd645a1f217a8868a9e98e88d2a8aa20de
+exit=0

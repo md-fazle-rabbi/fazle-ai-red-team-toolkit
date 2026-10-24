@@ -23,7 +23,7 @@ email = "mfrabbi.ai@gmail.com"
 # Every date-time needs a UTC offset. The end is exclusive. The longest window is 31 days.
 [window]
 start = 2026-10-18T00:00:00+06:00
-end = 2026-10-25T00:00:00+06:00
+end = 2026-11-18T00:00:00+06:00
 
 # Ceilings in the code: 120 requests per minute, 10000 requests in total, 10 at once.
 # Repo 1's embedding free tier allows 3 requests per minute, so stay well under that.
