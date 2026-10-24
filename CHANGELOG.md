@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- Added the `garak.yml` workflow. It installs garak 0.17.1 in its own environment, runs seven probes through the gated proxy against the hardened stub, and fails if the toolkit scorer flags an answer or finds none to score. The weak stub is not gated. Not measured yet: install time on the runner.
+
 - Moved the end dates of `examples/roe.stub-local.toml` and `examples/roe.repo1-local.toml` out to the 31-day maximum. Both examples stop working after those dates and need new dates then.
 
 - The `report` command takes `--robustness` and adds an adversarial robustness section for the `adversarial_ml` suite. The section needs a measurement at epsilon 0.1 and at least 100 rows, or the report exits with 3. Added `examples/roe.stub-ml.toml`.
