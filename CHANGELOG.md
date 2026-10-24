@@ -4,6 +4,8 @@
 
 ### 2026-10-24
 
+- Updated the limitations in the README. They had said PyRIT and IBM ART were not installed, garak had run only a plumbing probe, and CI ran no red-team tools.
+
 - Added the `garak.yml` workflow. It installs garak 0.17.1 in its own environment, runs seven probes through the gated proxy against the hardened stub, and fails if the toolkit scorer flags an answer or finds none to score. The weak stub is not gated. Not measured yet: install time on the runner.
 
 - Moved the end dates of `examples/roe.stub-local.toml` and `examples/roe.repo1-local.toml` out to the 31-day maximum. Both examples stop working after those dates and need new dates then.
