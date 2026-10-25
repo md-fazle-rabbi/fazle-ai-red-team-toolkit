@@ -263,6 +263,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--robustness",
         help="robustness summary JSON to add as a robustness section",
     )
+    report.add_argument(
+        "--image-run",
+        help="image-probe summary JSON to add as an image prompt injection section",
+    )
     report.add_argument("--out", required=True, help="Markdown file to write")
 
     gate = sub.add_parser(
@@ -524,12 +528,14 @@ def _report(args: argparse.Namespace) -> int:
         robustness = (
             read_robustness_summary(Path(args.robustness)) if args.robustness else None
         )
+        image = read_image_run_summary(Path(args.image_run)) if args.image_run else None
         text = build_report(
             loaded,
             runs,
             generated_at=datetime.now(UTC),
             fairness=fairness,
             robustness=robustness,
+            image=image,
         )
         Path(args.out).write_text(text, encoding="utf-8")
     except (
@@ -537,6 +543,7 @@ def _report(args: argparse.Namespace) -> int:
         SummaryError,
         FairnessError,
         RobustnessError,
+        ImageGateError,
         ReportBuildError,
     ) as exc:
         sys.stderr.write(f"cannot report: {exc}\n")
