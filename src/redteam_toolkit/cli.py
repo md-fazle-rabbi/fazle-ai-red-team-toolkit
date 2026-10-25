@@ -15,6 +15,7 @@ from pathlib import Path
 
 import uvicorn
 
+from redteam_toolkit import exploit_gate, exploit_library, exploit_run
 from redteam_toolkit.fairness import (
     DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE,
     DEFAULT_MAX_PARITY_DIFFERENCE,
@@ -99,6 +100,9 @@ PROXY_HOST = "127.0.0.1"
 DEFAULT_PROXY_PORT = 8100
 MIN_PORT = 1024
 MAX_PORT = 65535
+# Why: relative to the folder the command runs in, which is the repository root for
+# a person working from a clone. A different library is one --library away.
+DEFAULT_LIBRARY = "exploits/library.toml"
 
 
 def _positive(text: str) -> float:
@@ -214,6 +218,63 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=DEFAULT_MIN_IMAGES,
         help=f"fewest uploads a run needs to be judged (default: {DEFAULT_MIN_IMAGES})",
+    )
+
+    exploit = sub.add_parser(
+        "exploit-run",
+        parents=[common],
+        help="send every entry of the exploit library to a /query endpoint",
+    )
+    exploit.add_argument("--target", required=True, help="target id from the file")
+    exploit.add_argument("--url", required=True, help="full URL of the query endpoint")
+    exploit.add_argument(
+        "--library",
+        default=DEFAULT_LIBRARY,
+        help=f"exploit library TOML file (default: {DEFAULT_LIBRARY})",
+    )
+    exploit.add_argument(
+        "--canary",
+        action="append",
+        default=[],
+        help="a string the target must never repeat (repeat the option for more)",
+    )
+    exploit.add_argument(
+        "--json",
+        help="also write a JSON summary (ids and counts only) to this file",
+    )
+
+    exploit_gate_parser = sub.add_parser(
+        "exploit-gate",
+        help="check an exploit run summary against a bypass limit; sends nothing",
+    )
+    exploit_gate_parser.add_argument(
+        "--summary", required=True, help="exploit-run summary JSON"
+    )
+    exploit_gate_parser.add_argument(
+        "--bypass-limit",
+        type=_rate,
+        default=exploit_gate.DEFAULT_BYPASS_LIMIT,
+        help=(
+            "the bypass rate must stay below this "
+            f"(default: {exploit_gate.DEFAULT_BYPASS_LIMIT:g})"
+        ),
+    )
+    exploit_gate_parser.add_argument(
+        "--min-requests",
+        type=int,
+        default=exploit_gate.DEFAULT_MIN_REQUESTS,
+        help=(
+            "fewest probes a run needs to be judged "
+            f"(default: {exploit_gate.DEFAULT_MIN_REQUESTS})"
+        ),
+    )
+    exploit_gate_parser.add_argument(
+        "--allow-no-canary",
+        action="store_true",
+        help=(
+            "judge a run that checked no canary, for a target with none planted; "
+            "the result then carries a warning"
+        ),
     )
 
     score = sub.add_parser(
@@ -469,6 +530,76 @@ def _image_gate(args: argparse.Namespace) -> int:
     return EXIT_FLAGGED
 
 
+def _exploit_run(args: argparse.Namespace) -> int:
+    # Why: the suites come from the library categories, so the file has to allow all
+    # of them, and run_exploit_library checks every one before the first request. The
+    # library is read after the Rules of Engagement file, so a missing file still
+    # exits with 2. A refusal mid run writes no summary, because a partial count could
+    # read as a whole run. Like image-probe, a finished run exits with 0 whatever it
+    # found: exploit-gate does the judging.
+    try:
+        loaded = load_roe(_resolve_path(args.file))
+        gate = RoEGate(loaded)
+    except RoEError as exc:
+        sys.stderr.write(f"refused: {exc}\n")
+        return EXIT_REFUSED
+    try:
+        library = exploit_library.load_library(Path(args.library))
+        summary = exploit_run.run_exploit_library(
+            gate,
+            target_id=args.target,
+            url=args.url,
+            entries=library.exploit,
+            canaries=args.canary,
+            budget=RequestBudget(loaded.roe.limits),
+        )
+    except (exploit_library.ExploitLibraryError, exploit_run.ExploitRunError) as exc:
+        sys.stderr.write(f"cannot run: {exc}\n")
+        return EXIT_UNSCORABLE
+    except RoEViolationError as exc:
+        sys.stderr.write(f"refused: {exc}\nthe run stopped and wrote no summary\n")
+        return EXIT_REFUSED
+    sys.stdout.write(f"exploit run: {exploit_gate.format_counts(summary)}")
+    sys.stdout.write(f"canaries checked: {summary.canaries_checked}\n")
+    if args.json:
+        try:
+            Path(args.json).write_text(
+                exploit_run.exploit_run_json(summary), encoding="utf-8"
+            )
+        except OSError as exc:
+            sys.stderr.write(f"cannot write summary: {exc}\n")
+            return EXIT_UNSCORABLE
+    return EXIT_OK
+
+
+def _exploit_gate(args: argparse.Namespace) -> int:
+    # Why: this only reads a local file and sends nothing. A summary that cannot be
+    # judged exits with 3, never 0, so it cannot look like a pass.
+    try:
+        summary = exploit_gate.read_exploit_run_summary(Path(args.summary))
+        result = exploit_gate.evaluate_exploit_run(
+            summary,
+            bypass_limit=args.bypass_limit,
+            min_requests=args.min_requests,
+            require_canary=not args.allow_no_canary,
+        )
+    except (OSError, exploit_gate.ExploitGateError) as exc:
+        sys.stderr.write(f"cannot judge: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(exploit_gate.format_counts(summary))
+    sys.stdout.write(f"bypass_rate={result.bypass_rate:.4f} limit={result.limit:g}\n")
+    if result.bypassed_ids:
+        sys.stdout.write(f"bypassed ids: {' '.join(result.bypassed_ids)}\n")
+    for warning in result.warnings:
+        sys.stdout.write(f"warning: {warning}\n")
+    if result.passed:
+        sys.stdout.write("exploit gate: pass\n")
+        return EXIT_OK
+    for reason in result.reasons:
+        sys.stdout.write(f"exploit gate: fail, {reason}\n")
+    return EXIT_FLAGGED
+
+
 def _score(args: argparse.Namespace) -> int:
     # Why: this only reads a local file and sends nothing, so it needs no Rules of
     # Engagement file. An empty input must never look clean, so it exits with 3.
@@ -637,6 +768,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _image_probe(args)
     if args.command == "image-gate":
         return _image_gate(args)
+    if args.command == "exploit-run":
+        return _exploit_run(args)
+    if args.command == "exploit-gate":
+        return _exploit_gate(args)
     if args.command == "score":
         return _score(args)
     if args.command == "compare":
