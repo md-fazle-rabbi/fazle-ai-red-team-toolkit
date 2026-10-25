@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `redteam_toolkit/image_run.py`, which sends one probe image per line of a file you supply to an image upload endpoint through the gate and the request budget, and counts accepted, blocked and errored. Blocked means a 400. Every other failure counts as errored, so a rate limit or a bad key cannot read as a block. The summary holds counts and status code counts only, with no probe text. No command uses it yet.
+
 - Added `redteam_toolkit/image_probe.py`, which draws a line of text on a white PNG and can also store it as PNG metadata for the stub. It ships no attack text. This is the builder for the image prompt injection suite.
 
 - Raised the Pillow requirement to 13.0.0 or newer. The 12.3.0 pin I added with the image endpoint had known vulnerabilities, and the `pip-audit` step in CI fails on them.
