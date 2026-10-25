@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `docs/client-delivery/rituals.md`: what I do before, during and at the end of each session of a client engagement, the stop rules, how a finding is handled, and why a scope change needs a new file with a new hash. It marks the points the toolkit enforces and says the rest are habits. No client engagement has used it yet.
+
 - Added `docs/client-delivery/onboarding.md`, the checklist for starting a client engagement: what to get before writing the Rules of Engagement file, how to build and check it, the kickoff agenda, a dry run on the local stub and a go or no go list. It marks which items the loader enforces and which are only habits. No client engagement has used it yet.
 
 - Corrected the README limitation on `RequestBudget`. It still said the budget is not thread safe and that `concurrency` is not enforced. `acquire` has a lock, and the gated proxy holds at most `concurrency` requests in flight. The class itself still does not enforce `concurrency`, and the README now says so.
