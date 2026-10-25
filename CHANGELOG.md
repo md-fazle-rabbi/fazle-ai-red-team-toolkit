@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `docs/client-delivery/offboarding.md`: how an engagement is closed, covering stopping, revoking access, building the final report with a recorded hash, the handover, cleaning up, the close-out note and what to learn from the work. It sets no retention period, since that comes from the client agreement. No client engagement has used it yet.
+
 - Added `docs/client-delivery/rituals.md`: what I do before, during and at the end of each session of a client engagement, the stop rules, how a finding is handled, and why a scope change needs a new file with a new hash. It marks the points the toolkit enforces and says the rest are habits. No client engagement has used it yet.
 
 - Added `docs/client-delivery/onboarding.md`, the checklist for starting a client engagement: what to get before writing the Rules of Engagement file, how to build and check it, the kickoff agenda, a dry run on the local stub and a go or no go list. It marks which items the loader enforces and which are only habits. No client engagement has used it yet.
