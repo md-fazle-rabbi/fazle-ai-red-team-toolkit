@@ -1,0 +1,36 @@
+image probe chain, end to end, local stub only
+probes: the two strings defined in tests/test_stub_target.py, 20 lines per file
+
+run 1: weak stub, 10 plain + 10 spaced
+image probes: sent=20 accepted=20 blocked=0 errored=0
+status codes: 201=20
+image-probe exit=0
+sent=20 accepted=20 blocked=0 errored=0
+note: every accepted upload counts as a bypass, so the probes file must hold attack probes only
+bypass_rate=1.0000 limit=0.05
+image gate: fail, bypass rate 1.0000 is not below 0.05
+image-gate exit=1
+
+run 2: hardened stub, 10 plain + 10 spaced
+image probes: sent=20 accepted=10 blocked=10 errored=0
+status codes: 201=10 400=10
+image-probe exit=0
+sent=20 accepted=10 blocked=10 errored=0
+note: every accepted upload counts as a bypass, so the probes file must hold attack probes only
+bypass_rate=0.5000 limit=0.05
+image gate: fail, bypass rate 0.5000 is not below 0.05
+image-gate exit=1
+
+run 3: hardened stub, 20 plain
+image probes: sent=20 accepted=0 blocked=20 errored=0
+status codes: 400=20
+image-probe exit=0
+sent=20 accepted=0 blocked=20 errored=0
+note: every accepted upload counts as a bypass, so the probes file must hold attack probes only
+bypass_rate=0.0000 limit=0.05
+image gate: pass
+image-gate exit=0
+
+report from run 2
+report written: proof/report-image-stub.md
+report exit=0
