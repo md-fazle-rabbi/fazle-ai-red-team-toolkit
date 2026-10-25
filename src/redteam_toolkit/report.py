@@ -43,6 +43,7 @@ from redteam_toolkit.threat_map import (
     ATLAS_TECHNIQUES,
     OWASP_LLM,
     OWASP_LLM_EDITION,
+    agentic_lines,
     mapping_for,
 )
 
@@ -363,6 +364,7 @@ def _mapping(suites: Sequence[str]) -> list[str]:
         lines.append(
             "- OWASP: " + ", ".join(f"{oid} {OWASP_LLM[oid]}" for oid in entry.owasp)
         )
+        lines += agentic_lines(entry)
         if entry.note:
             lines.append(f"- Note: {entry.note}")
         lines.append("")
