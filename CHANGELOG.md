@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### 2026-10-25
+
+- Raised the Pillow requirement to 13.0.0 or newer. The 12.3.0 pin I added with the image endpoint had known vulnerabilities, and the `pip-audit` step in CI fails on them.
+
 ### 2026-10-24
 
 - Added `POST /ingest/image` to the local stub. It follows the Repo 1 snapshot for type, pixel and empty file checks and has a hardened-mode firewall on the extracted text. There is no vision model. The stand-in reads text the sender puts in the PNG metadata, so it does not test OCR. New dependencies: Pillow and python-multipart.
