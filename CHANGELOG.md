@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `redteam_toolkit/findings.py`, a catalogue of seven finding kinds. Each has a title, the suite it belongs to, a plain-English business impact and remediation steps. Four carry a CVSS v3.1 base vector, which is my judgement and assumes an attacker with an ordinary account or key. Three (group outcome gap, evasion accuracy drop, load limit breach) carry no score and the reason, because CVSS does not describe them. Nothing reads the catalogue yet.
+
 - Added `redteam_toolkit/cvss.py`, which computes a CVSS v3.1 base score and severity from a base vector string. It only does the arithmetic and does not pick a vector for any finding. It refuses temporal and environmental metrics.
 
 - The `report` command takes `--exploit-run SUMMARY.json` and adds an exploit library section: the counts per category, the bypass rate against its limit, the ids of the bypassed entries with their OWASP and Agentic ids, the result and two limitations. The engagement must allow every suite the entries ran under. A summary that cannot be judged (an errored probe, fewer probes than the floor, or no canary checked) exits 3 and writes no report. The section holds ids and counts only, with no probe text.
