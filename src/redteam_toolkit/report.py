@@ -1,10 +1,10 @@
 """Build a Markdown report from a Rules of Engagement file and scored results.
 
 The report holds counts, rates and framework mappings only. Run summaries, the
-fairness summary and the robustness summary never carry prompt or answer text, so
-neither does the report. A run with nothing evaluated cannot be reported, and neither
-can a fairness or robustness summary that is too thin to judge, because a table of
-zeros would look like a clean result.
+fairness summary, the robustness summary and the image run summary never carry
+prompt or answer text, so neither does the report. A run with nothing evaluated
+cannot be reported, and neither can a fairness, robustness or image summary that is
+too thin to judge, because a table of zeros would look like a clean result.
 """
 
 from __future__ import annotations
@@ -22,6 +22,13 @@ from redteam_toolkit.fairness import (
     FairnessSummary,
     evaluate,
 )
+from redteam_toolkit.image_gate import (
+    DEFAULT_BYPASS_LIMIT,
+    ImageGateError,
+    evaluate_image_run,
+)
+from redteam_toolkit.image_run import SUITE as IMAGE_SUITE
+from redteam_toolkit.image_run import ImageRunSummary
 from redteam_toolkit.robustness import (
     DEFAULT_EPSILON,
     DEFAULT_MAX_ACCURACY_DROP,
@@ -73,6 +80,15 @@ ROBUSTNESS_LIMITATIONS: Final[tuple[str, ...]] = (
     "drop does not show a model is robust, and a large drop does not say why it "
     "happens.",
 )
+IMAGE_LIMITATIONS: Final[tuple[str, ...]] = (
+    "A run against the local stub reads text stored in the PNG metadata. That is "
+    "not OCR and not a vision model, so it says nothing about pixels or about any "
+    "other system.",
+    "The image gate counts every accepted upload as a bypass, so the probes file "
+    "had to hold attack probes only. The bypass limit is a policy value I chose, "
+    "not a measured one. A pass says one run stayed under it. It does not say the "
+    "probes were hard.",
+)
 # Kept as one tuple for callers that want every fixed run limitation.
 LIMITATIONS: Final[tuple[str, ...]] = RUN_LIMITATIONS + COMMON_LIMITATIONS
 
@@ -120,8 +136,9 @@ def _check(
     runs: Sequence[RunInput],
     fairness: FairnessSummary | None,
     robustness: RobustnessSummary | None,
+    image: ImageRunSummary | None,
 ) -> None:
-    if not runs and fairness is None and robustness is None:
+    if not runs and fairness is None and robustness is None and image is None:
         raise ReportBuildError("no runs were given")
     allowed = loaded.roe.allowed_suites
     if fairness is not None and FAIRNESS_SUITE not in allowed:
@@ -131,6 +148,10 @@ def _check(
     if robustness is not None and ROBUSTNESS_SUITE not in allowed:
         raise ReportBuildError(
             f"suite {ROBUSTNESS_SUITE!r} is not in allowed_suites of the engagement"
+        )
+    if image is not None and IMAGE_SUITE not in allowed:
+        raise ReportBuildError(
+            f"suite {IMAGE_SUITE!r} is not in allowed_suites of the engagement"
         )
     seen: set[tuple[str, str]] = set()
     for run in runs:
@@ -285,6 +306,40 @@ def _robustness_section(summary: RobustnessSummary) -> list[str]:
     return lines
 
 
+def _image_section(summary: ImageRunSummary) -> list[str]:
+    try:
+        result = evaluate_image_run(summary)
+    except ImageGateError as exc:
+        raise ReportBuildError(
+            f"the image run summary cannot be judged: {exc}"
+        ) from exc
+    outcome = (
+        "the bypass rate is below the limit."
+        if result.passed
+        else "; ".join(result.reasons) + "."
+    )
+    codes = ", ".join(
+        f"{_cell(code)}: {count}"
+        for code, count in sorted(summary.status_codes.items())
+    )
+    return [
+        f"### Image prompt injection ({IMAGE_SUITE})",
+        "",
+        "| sent | accepted | blocked | errored |",
+        "| ---: | ---: | ---: | ---: |",
+        f"| {summary.sent} | {summary.accepted} | {summary.blocked} | "
+        f"{summary.errored} |",
+        "",
+        f"Status codes: {codes}.",
+        "",
+        f"Bypass rate: {result.bypass_rate:.4f} (limit {DEFAULT_BYPASS_LIMIT:g}). "
+        "Every accepted upload counts as a bypass, so the probes file must hold "
+        "attack probes only.",
+        "",
+        f"Result: {outcome}",
+    ]
+
+
 def _mapping(suites: Sequence[str]) -> list[str]:
     lines = [
         "## Threat mapping",
@@ -319,6 +374,7 @@ def _overview(
     suites: Sequence[str],
     fairness: FairnessSummary | None,
     robustness: RobustnessSummary | None,
+    image: ImageRunSummary | None,
 ) -> list[str]:
     lines: list[str] = []
     if runs:
@@ -338,6 +394,8 @@ def _overview(
             f"A robustness summary over {len(robustness.points)} perturbation "
             "sizes is included."
         )
+    if image is not None:
+        lines.append(f"An image run of {image.sent} uploads is included.")
     lines.append(f"Suites covered: {', '.join(suites)}.")
     return lines
 
@@ -349,13 +407,16 @@ def build_report(
     generated_at: datetime,
     fairness: FairnessSummary | None = None,
     robustness: RobustnessSummary | None = None,
+    image: ImageRunSummary | None = None,
 ) -> str:
-    _check(loaded, runs, fairness, robustness)
+    _check(loaded, runs, fairness, robustness, image)
     suites = list(dict.fromkeys(run.suite for run in runs))
     if fairness is not None and FAIRNESS_SUITE not in suites:
         suites.append(FAIRNESS_SUITE)
     if robustness is not None and ROBUSTNESS_SUITE not in suites:
         suites.append(ROBUSTNESS_SUITE)
+    if image is not None and IMAGE_SUITE not in suites:
+        suites.append(IMAGE_SUITE)
     lines = [
         f"# Red team report: {loaded.roe.engagement_id}",
         "",
@@ -363,7 +424,7 @@ def build_report(
         "",
         "## Overview",
         "",
-        *_overview(runs, suites, fairness, robustness),
+        *_overview(runs, suites, fairness, robustness, image),
         "",
         *_engagement(loaded),
         "",
@@ -376,11 +437,14 @@ def build_report(
         lines += [*_fairness_section(fairness), ""]
     if robustness is not None:
         lines += [*_robustness_section(robustness), ""]
+    if image is not None:
+        lines += [*_image_section(image), ""]
     limitations = (
         (RUN_LIMITATIONS if runs else ())
         + COMMON_LIMITATIONS
         + (FAIRNESS_LIMITATIONS if fairness is not None else ())
         + (ROBUSTNESS_LIMITATIONS if robustness is not None else ())
+        + (IMAGE_LIMITATIONS if image is not None else ())
     )
     lines += [*_mapping(suites), "", "## Limitations", ""]
     lines += [f"- {item}" for item in limitations]
