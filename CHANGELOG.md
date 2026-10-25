@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added an addendum to ADR-010 recording which Trivy version Repo 1 runs. Its workflow pins `trivy-action` v0.36.0 by SHA and sets no version, so the action default, Trivy v0.70.0, applies. The log of one Repo 1 run (2026-10-19, job web-build-and-scan) confirms v0.70.0 and shows Trivy reporting 0.76.0 as available. The advisory lists no later version as safe or as malicious, so the addendum says it is neither flagged nor cleared.
+
 - Updated SECURITY.md with three short sections: how evidence and data are handled (summaries hold counts and ids only, raw output can hold target answers and is git-ignored, credentials live in environment variables), what the toolkit does not enforce (with a pointer to the README limitations) and which version is maintained.
 
 - Updated the README: badges for the exploit, load and garak workflows, a status line that names the report and its findings section, the report options for robustness, image and exploit summaries, a paragraph on the Findings section, a Client delivery section that links the three documents, and two limitations (the findings catalogue and the unused delivery process).

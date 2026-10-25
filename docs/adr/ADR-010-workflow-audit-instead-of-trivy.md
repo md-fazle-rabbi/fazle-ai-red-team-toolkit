@@ -22,3 +22,17 @@ When a container image exists, reconsider Trivy. Then pin the action to a full c
 - Negative: the plan's Trivy item is not done. This is a deliberate gap, listed in the README.
 - Negative: offline mode skips the checks that ask GitHub whether a pinned commit really belongs to the action's repository. Turning on online mode is a later step.
 - Risk and mitigation: zizmor is itself a third-party tool running in CI. Mitigation: it is pinned to an exact version, runs with read-only permissions and no token, and is installed from PyPI, which `uv` resolves at that exact version.
+
+## Addendum 2026-10-25: what Repo 1 runs
+
+Repo 1 (fazle-enterprise-ai-platform, commit 715a933) runs Trivy in two jobs, `build-and-scan` and `web-build-and-scan`. Both use `aquasecurity/trivy-action` pinned to the commit `a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8`, commented as v0.36.0. The tag `v0.36.0` points at that SHA.
+
+The workflow sets no `version` input. In that pinned action the default is `v0.70.0`, and the action installs it through `setup-trivy` v0.2.6. So Repo 1's CI runs Trivy v0.70.0. I read this from the action file at that SHA. The log of Repo 1's CI run 39180889894 (2026-10-19), job `web-build-and-scan`, confirms it: the cache key is `trivy-binary-v0.70.0-Linux-X64` and Trivy prints `current version is 0.70.0`. I have not seen the log lines of the `build-and-scan` job, which uses the same pin.
+
+The advisory GHSA-69fq-xp46-6x23 lists Trivy v0.69.4 as malicious and v0.69.2 and v0.69.3 as safe. It lists `trivy-action` v0.35.0 and `setup-trivy` v0.2.6 as safe. It does not say anything about later versions. Trivy v0.70.0 was published on 2026-04-17, after the incident, and `trivy-action` v0.36.0 was tagged on 2026-04-22. The advisory neither flags nor clears either of them.
+
+The same log has Trivy print `Version 0.76.0 of Trivy is now available`, so the version in use is several releases behind. I did not check whether 0.76.0, or any release between the two, is covered by the advisory.
+
+Consequence: the advisory does not settle whether Repo 1's Trivy version is safe. Repo 1 could set `version:` in the workflow so the version is a decision in the file and not the action's default. Its own `ci.yml` does this for uv, for the same reason.
+
+This decision stays as it was. This repository still has no container image, and Trivy stays out until it does. When it is added, set the Trivy version explicitly and check it against the advisory then.
