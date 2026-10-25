@@ -29,6 +29,28 @@ Test corpora in this repository can contain prompt injection strings, jailbreak 
 other hostile text. They are test data. Do not paste them into a live assistant that can
 reach real data or tools.
 
+## Evidence and data handling
+The summaries and the report this toolkit writes hold counts, rates and ids only. They
+hold no probe text and no answer text. The proxy audit file records the outcome of each
+request and never a request or response body.
+
+Raw output is different. A garak report or an answers file can hold what the target
+said, including personal data or secrets if the target leaks them. The folders
+`engagements/`, `runs/`, `reports/` and `evidence/` are git-ignored for that reason, and
+only sanitized evidence belongs in `proof/`. Credentials go in an environment variable
+and never in a Rules of Engagement file, which holds only the variable's name.
+
+## What the toolkit does not enforce
+The Rules of Engagement gate checks what the file says. It cannot tell whether the
+signature behind the file is genuine, and it compares URL text, not the address a name
+resolves to. Third-party tools that send their own requests are bound by the gate only
+when they go through the local proxy. The client delivery documents in
+`docs/client-delivery/` are habits, not controls. The full list is in the Known
+limitations section of the README.
+
+## Supported versions
+Only the latest commit on the main branch is maintained.
+
 ## Reporting a vulnerability
 If you find a security issue in the toolkit itself, not in a system you tested with it,
 email mfrabbi.ai@gmail.com with a description and reproduction steps. Please do not open a
