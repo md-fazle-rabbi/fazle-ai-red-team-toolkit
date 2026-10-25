@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Rewrote the front of the README: a Hire me section with contact and LinkedIn, a table of claims with the proof file for each, a short list of what to read first and a guide for a 30 second, 3 minute and 10 minute read. The sections below it are unchanged.
+
 - Added `proof/ci-final-green.png`, a screenshot of the four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit a0f86b0, and linked it from the README status. The runs of the commit before it show a red cross because the newer push cancelled them (`cancel-in-progress`), not because a check failed.
 
 - Explained the gap between the request counts of one load run. The load gate reads Locust's `_stats.csv`, which Locust 2.47.0 rewrites once a second and never after the last request, so it trails the end of the run by up to a second. The proxy audit counts every forwarded request. The CI run of 2026-10-23 gave 11,887 (CSV), 12,204 (final table) and 12,232 (audit), and each gap fits inside one second of traffic plus one request in flight per user. Added `proof/load-count-gap.txt` and a README sentence. This is arithmetic on existing logs and Locust's source. No run was built to confirm it.

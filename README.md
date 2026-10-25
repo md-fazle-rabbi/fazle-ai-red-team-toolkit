@@ -7,11 +7,39 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.13.15-blue)
 
+**An authorized red-team and evaluation toolkit for LLM and RAG applications. It refuses to run without a written scope file, scores what comes back, and writes a report that holds counts, ids and framework mappings, never prompts or answers.**
+
 ## Hire me
-An automated red-team and evaluation suite for LLM applications: prompt injection, PII
-leakage, jailbreaks, bias, adversarial ML, supply-chain, and rogue-agent test cases. Built
-to attack fazle-enterprise-ai-platform, and, with written authorization, client systems.
-Contact: mfrabbi.ai@gmail.com · Demo: TBD
+**Fazle Rabbi, Secure Production AI Systems Engineer.** I build production AI systems that pass security review, then I test them with written authorization. Repo 1 is the system. This is the toolkit built to attack it. Available for freelance engagements and full time roles.
+Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabbi-ai/ | Loom demo: not recorded yet
+
+## At a glance
+| Claim | Result | Evidence |
+|---|---|---|
+| Scope gate | No valid Rules of Engagement file, no request. A refusal exits 2 and sends nothing | [`proof/roe-gate-demo.txt`](proof/roe-gate-demo.txt), [`proof/roe-gate-local-checks.txt`](proof/roe-gate-local-checks.txt) |
+| Exploit library | 25 probes tagged to OWASP LLM Top 10 ids. On the local stub the weak mode bypassed 24 of 25 and the gate exited 1. The hardened mode bypassed none and the gate exited 0. The hardened stub was built next to these probes, so that is not a measure of how hard the library is | [`proof/exploit-commands-local-checks.txt`](proof/exploit-commands-local-checks.txt) |
+| Image probes | `image-probe` and `image-gate` send images through the gate and judge the bypass rate. A stand-in extractor reads PNG metadata, so this is not OCR and not a vision model | [`proof/image-gate-run.txt`](proof/image-gate-run.txt), [`proof/image-report-end-to-end-run.txt`](proof/image-report-end-to-end-run.txt) |
+| Third party tools stay in scope | A local gated proxy forwards an in-scope request, answers 403 to a path outside the file, and audits both without bodies. garak runs through it | [`proof/gated-proxy-smoke.txt`](proof/gated-proxy-smoke.txt) |
+| Load gate in CI | One run on a GitHub runner: 50 users for 20 s through the proxy, p95 88 ms, no failures. One run against a stub, not a measured safe limit | [`proof/load-gate-ci-run.txt`](proof/load-gate-ci-run.txt), [`proof/load-count-gap.txt`](proof/load-count-gap.txt) |
+| Gates that refuse a thin run | Load, fairness, robustness, image and exploit gates exit 0 on pass, 1 on a breach and 3 when the input is too thin to judge | [`proof/fairness-gate-local-checks.txt`](proof/fairness-gate-local-checks.txt), [`proof/robustness-gate-local-checks.txt`](proof/robustness-gate-local-checks.txt), [`proof/image-gate-run.txt`](proof/image-gate-run.txt) |
+| Client report | A Markdown report with the SHA-256 of the scope file, results, a Findings section with CVSS v3.1 scores where CVSS applies, framework mappings and fixed limitations | [`proof/report-stub-local.md`](proof/report-stub-local.md), [`proof/report-findings-local-checks.txt`](proof/report-findings-local-checks.txt) |
+| Threat map | Every suite is mapped to STRIDE, MITRE ATLAS, the OWASP LLM Top 10 and, where there is an honest fit, the OWASP Agentic list. A test fails when a suite is left out | [`docs/threat-map.svg`](docs/threat-map.svg) |
+| Client delivery process | Onboarding, rituals and offboarding documents. No client engagement has used them yet | [`docs/client-delivery`](docs/client-delivery) |
+| CI | Four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit a0f86b0 | [`proof/ci-final-green.png`](proof/ci-final-green.png) |
+
+*Every result above is against a local stub with synthetic data. None of it says anything about fazle-enterprise-ai-platform or any real system.*
+
+## Read this first
+- Authorized testing only. Read [SECURITY.md](SECURITY.md) before pointing this at anything you do not own.
+- "Aligned" means mapped to a framework. Nothing here is a certification, an audit or legal advice.
+- Every check reduces risk. None of them removes it, and a pass says one run stayed inside a limit.
+- Limits such as 0.05 and 0.10 are policy values I chose, not measured ones.
+- Nothing has been run against fazle-enterprise-ai-platform yet. That needs a separate authorized run.
+
+## How to read this repo
+- 30 seconds: the table above.
+- 3 minutes: the status below and the known limitations at the end.
+- 10 minutes: the sections for the exploit library, image probes and the report, then the decisions in [docs/adr](docs/adr).
 
 ## Status
 Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. Nothing has been run against fazle-enterprise-ai-platform yet, so every result in this repository so far says nothing about it. Screenshot of the passing workflows for commit a0f86b0, taken 2026-10-25: [proof/ci-final-green.png](proof/ci-final-green.png).
