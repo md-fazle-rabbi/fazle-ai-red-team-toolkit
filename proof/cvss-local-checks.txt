@@ -1,0 +1,5 @@
+All checks passed!
+94 files already formatted
+Success: no issues found in 72 source files
+TOTAL    1948      0    478      0   100%
+742 passed in 7.84s
