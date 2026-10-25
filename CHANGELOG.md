@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added the `Exploit gate` workflow (`.github/workflows/exploit.yml`). On every push and pull request it starts the weak and then the hardened stub, runs the exploit library through `exploit-run`, and requires the weak run to fail `exploit-gate` and the hardened run to pass it. A window around the current time is written into a copy of the example file, so it does not fail on a date. Added tests that check the action pins, the files it needs and the window rewrite.
+
 - Updated the README. The status and the first known limitation said no attack suite exists, which stopped being true. Added an Exploit library section with the commands, the exit codes, the stub results from 2026-10-25 and what they do not show, named the Agentic list in the threat map text, and added limitations for the library size, EX-010, answer only scoring, and the missing report section and CI re-run.
 
 - Added `redteam-toolkit exploit-run` and `redteam-toolkit exploit-gate`. `exploit-run` sends every entry of the exploit library (default `exploits/library.toml`) to a `/query` endpoint through the gate and the request budget, checks the canaries you pass with `--canary`, and prints the counts, with `--json` writing ids and counts only. The engagement file must allow `prompt_injection`, `jailbreak` and `pii_leakage`, or nothing is sent. A refusal or a used up request total exits 2 and writes no summary, and an unreadable library exits 3. `exploit-gate` judges that summary: 0 below the bypass limit (default 0.05), 1 at or above it, 3 when it cannot be judged. Added `examples/roe.stub-exploit.toml`.
