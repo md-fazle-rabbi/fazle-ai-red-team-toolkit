@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `redteam_toolkit/image_probe.py`, which draws a line of text on a white PNG and can also store it as PNG metadata for the stub. It ships no attack text. This is the builder for the image prompt injection suite.
+
 - Raised the Pillow requirement to 13.0.0 or newer. The 12.3.0 pin I added with the image endpoint had known vulnerabilities, and the `pip-audit` step in CI fails on them.
 
 ### 2026-10-24

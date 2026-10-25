@@ -1,0 +1,7 @@
+TOTAL    1348      0    312      0   100%
+
+16 files skipped due to complete coverage.
+450 passed in 7.06s
+All checks passed!
+72 files already formatted
+Success: no issues found in 52 source files
