@@ -231,10 +231,12 @@ uv run pytest --cov --cov-fail-under=90
   by default; a caller that builds its own client has to do the same.
 - Using the budget is opt in. `send_probe` works without one, and nothing forces a suite
   to pass it, so a suite that skips it can still send as fast as it likes.
-- `RequestBudget` is sequential, in memory and not thread safe. The count starts at zero
-  in every new process, so two runs in a row each get the full `total_requests`. The
-  file's `concurrency` limit is exposed but not enforced, because no concurrent runner
-  exists.
+- `RequestBudget` lives in memory. Its `acquire` is thread safe, so the count and the
+  spacing stay right when several threads call it. The count starts at zero in every
+  new process, so two runs in a row each get the full `total_requests`. The class does
+  not enforce the file's `concurrency` limit, because it never sees a request finish.
+  The gated proxy holds at most that many requests in flight. A caller that sends from
+  several threads without the proxy has to hold the slots itself.
 - The budget spaces requests by the file's rate. It does not know how fast the target can
   actually answer, so a rate above what a real target can handle will still overload it.
 - `send_probe` opens and closes its own HTTP client per call unless one is passed in,
