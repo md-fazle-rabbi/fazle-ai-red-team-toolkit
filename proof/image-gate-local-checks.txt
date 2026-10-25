@@ -1,0 +1,9 @@
+---------------------------------------------------
+TOTAL    1534      0    360      0   100%
+
+18 files skipped due to complete coverage.
+Required test coverage of 90% reached. Total coverage: 100.00%
+545 passed in 4.38s
+All checks passed!
+77 files already formatted
+Success: no issues found in 57 source files

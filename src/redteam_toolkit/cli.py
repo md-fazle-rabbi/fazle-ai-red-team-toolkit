@@ -24,6 +24,14 @@ from redteam_toolkit.fairness import (
     read_fairness_summary,
 )
 from redteam_toolkit.fairness import evaluate as evaluate_fairness
+from redteam_toolkit.image_gate import (
+    DEFAULT_BYPASS_LIMIT,
+    ImageGateError,
+    evaluate_image_run,
+    format_counts,
+    read_image_run_summary,
+)
+from redteam_toolkit.image_gate import DEFAULT_MIN_REQUESTS as DEFAULT_MIN_IMAGES
 from redteam_toolkit.image_run import SUITE as IMAGE_SUITE
 from redteam_toolkit.image_run import (
     ImageRunError,
@@ -185,6 +193,27 @@ def build_parser() -> argparse.ArgumentParser:
     image.add_argument(
         "--json",
         help="also write a JSON summary (counts only) to this file",
+    )
+
+    image_gate = sub.add_parser(
+        "image-gate",
+        help="check an image probe summary against a bypass limit; sends nothing",
+    )
+    image_gate.add_argument("--summary", required=True, help="image-probe summary JSON")
+    image_gate.add_argument(
+        "--bypass-limit",
+        type=_rate,
+        default=DEFAULT_BYPASS_LIMIT,
+        help=(
+            "the bypass rate must stay below this, and every probe line must be an "
+            f"attack probe (default: {DEFAULT_BYPASS_LIMIT:g})"
+        ),
+    )
+    image_gate.add_argument(
+        "--min-requests",
+        type=int,
+        default=DEFAULT_MIN_IMAGES,
+        help=f"fewest uploads a run needs to be judged (default: {DEFAULT_MIN_IMAGES})",
     )
 
     score = sub.add_parser(
@@ -409,6 +438,33 @@ def _image_probe(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _image_gate(args: argparse.Namespace) -> int:
+    # Why: this only reads a local file and sends nothing. A summary that cannot be
+    # judged exits with 3, never 0, so it cannot look like a pass.
+    try:
+        summary = read_image_run_summary(Path(args.summary))
+        result = evaluate_image_run(
+            summary,
+            bypass_limit=args.bypass_limit,
+            min_requests=args.min_requests,
+        )
+    except (OSError, ImageGateError) as exc:
+        sys.stderr.write(f"cannot judge: {exc}\n")
+        return EXIT_UNSCORABLE
+    sys.stdout.write(format_counts(summary))
+    sys.stdout.write(
+        "note: every accepted upload counts as a bypass, so the probes file must "
+        "hold attack probes only\n"
+    )
+    sys.stdout.write(f"bypass_rate={result.bypass_rate:.4f} limit={result.limit:g}\n")
+    if result.passed:
+        sys.stdout.write("image gate: pass\n")
+        return EXIT_OK
+    for reason in result.reasons:
+        sys.stdout.write(f"image gate: fail, {reason}\n")
+    return EXIT_FLAGGED
+
+
 def _score(args: argparse.Namespace) -> int:
     # Why: this only reads a local file and sends nothing, so it needs no Rules of
     # Engagement file. An empty input must never look clean, so it exits with 3.
@@ -572,6 +628,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "image-probe":
         return _image_probe(args)
+    if args.command == "image-gate":
+        return _image_gate(args)
     if args.command == "score":
         return _score(args)
     if args.command == "compare":

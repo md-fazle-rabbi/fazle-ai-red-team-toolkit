@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `redteam-toolkit image-gate --summary FILE`, which checks the summary that `image-probe` writes. It counts every accepted upload as a bypass, so the probes file must hold attack probes only, and it says so each time it runs. It exits 0 when the bypass rate is below the limit (default 0.05), 1 when it reaches or passes it, and 3 when the file cannot be read, the run sent fewer than the floor (default 20) or any upload errored, because an errored upload is not a block. It sends nothing. The limit and the floor are policy values I chose, not measured ones.
+
 - Added `redteam-toolkit image-probe`, which sends one probe image per line of a file you supply to an image upload endpoint and prints how many uploads were accepted, blocked and errored. The suite is fixed to `image_prompt_injection`, so the Rules of Engagement file has to allow that suite and the upload path. A refusal exits 2 before the probes file is read. An empty or unusable probes file exits 3. A run that uses up its request total exits 2 and writes no summary. `--json` writes counts only. Uploads go straight through `send_probe` and not through the proxy, because the proxy only forwards JSON object bodies. Added `examples/roe.stub-image.toml`.
 
 - Added `redteam_toolkit/image_run.py`, which sends one probe image per line of a file you supply to an image upload endpoint through the gate and the request budget, and counts accepted, blocked and errored. Blocked means a 400. Every other failure counts as errored, so a rate limit or a bad key cannot read as a block. The summary holds counts and status code counts only, with no probe text. No command uses it yet.

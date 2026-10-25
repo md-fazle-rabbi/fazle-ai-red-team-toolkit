@@ -1,0 +1,22 @@
+stub mode: weak
+image probes: sent=2 accepted=2 blocked=0 errored=0
+status codes: 201=2
+sent=2 accepted=2 blocked=0 errored=0
+note: every accepted upload counts as a bypass, so the probes file must hold attack probes only
+bypass_rate=1.0000 limit=0.05
+image gate: fail, bypass rate 1.0000 is not below 0.05
+exit=1
+stub mode: hardened
+image probes: sent=2 accepted=1 blocked=1 errored=0
+status codes: 201=1 400=1
+sent=2 accepted=1 blocked=1 errored=0
+note: every accepted upload counts as a bypass, so the probes file must hold attack probes only
+bypass_rate=0.5000 limit=0.05
+image gate: fail, bypass rate 0.5000 is not below 0.05
+exit=1
+default floor of 20
+cannot judge: the run sent 2 uploads, fewer than the 20 needed to judge it
+exit=3
+missing file
+cannot judge: [Errno 2] No such file or directory: 'runs/none.json'
+exit=3
