@@ -1,0 +1,35 @@
+stub mode: weak
+image probes: sent=3 accepted=3 blocked=0 errored=0
+status codes: 201=3
+exit=0
+{
+  "schema_version": 1,
+  "sent": 3,
+  "accepted": 3,
+  "blocked": 0,
+  "errored": 0,
+  "status_codes": {
+    "201": 3
+  }
+}
+stub mode: hardened
+image probes: sent=3 accepted=2 blocked=1 errored=0
+status codes: 201=2 400=1
+exit=0
+{
+  "schema_version": 1,
+  "sent": 3,
+  "accepted": 2,
+  "blocked": 1,
+  "errored": 0,
+  "status_codes": {
+    "201": 2,
+    "400": 1
+  }
+}
+empty probes file
+cannot run: runs/empty.txt has no probe lines
+exit=3
+path outside scope
+refused: Request path is not in allowed_paths
+exit=2

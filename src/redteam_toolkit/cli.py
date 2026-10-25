@@ -1,8 +1,9 @@
 """Command line entry point.
 
-Exit codes: 0 means authorized, clean or passed, 1 means a detector flagged an answer
-or a gate failed, 2 means the Rules of Engagement file refused the request, 3
-means a report, summary or stats file could not be read or judged.
+Exit codes: 0 means authorized, clean, passed or a probe run finished, 1 means a
+detector flagged an answer or a gate failed, 2 means the Rules of Engagement file
+refused the request, including a run that used up its request total, 3 means a report,
+summary, stats or probes file could not be read or judged.
 """
 
 import argparse
@@ -23,6 +24,13 @@ from redteam_toolkit.fairness import (
     read_fairness_summary,
 )
 from redteam_toolkit.fairness import evaluate as evaluate_fairness
+from redteam_toolkit.image_run import SUITE as IMAGE_SUITE
+from redteam_toolkit.image_run import (
+    ImageRunError,
+    image_run_json,
+    read_probe_lines,
+    run_image_probes,
+)
 from redteam_toolkit.limits import RequestBudget
 from redteam_toolkit.load_gate import (
     DEFAULT_MAX_FAILURE_RATE,
@@ -48,7 +56,15 @@ from redteam_toolkit.robustness import (
     format_points,
     read_robustness_summary,
 )
-from redteam_toolkit.roe import SUITES, LoadedRoE, RoEError, RoEGate, Target, load_roe
+from redteam_toolkit.roe import (
+    SUITES,
+    LoadedRoE,
+    RoEError,
+    RoEGate,
+    RoEViolationError,
+    Target,
+    load_roe,
+)
 from redteam_toolkit.scoring import (
     ReportError,
     format_scores,
@@ -152,6 +168,23 @@ def build_parser() -> argparse.ArgumentParser:
     proxy.add_argument(
         "--audit",
         help="audit file to append to (default: a file under runs/)",
+    )
+
+    image = sub.add_parser(
+        "image-probe",
+        parents=[common],
+        help="send one image per line of a file you supply to an image upload endpoint",
+    )
+    image.add_argument("--target", required=True, help="target id from the file")
+    image.add_argument("--url", required=True, help="full URL of the upload endpoint")
+    image.add_argument(
+        "--probes",
+        required=True,
+        help="text file you supply, one probe per line, drawn into one image each",
+    )
+    image.add_argument(
+        "--json",
+        help="also write a JSON summary (counts only) to this file",
     )
 
     score = sub.add_parser(
@@ -329,6 +362,53 @@ def _serve_proxy(
     uvicorn.run(app, host=PROXY_HOST, port=args.port, log_level="warning")
 
 
+def _image_probe(args: argparse.Namespace) -> int:
+    # Why: the suite is fixed to image_prompt_injection, so the file has to allow it.
+    # The URL is checked first, so a refusal happens before the probes file is read.
+    # The upload goes straight through send_probe, which applies the gate and the
+    # budget. It does not go through the proxy, because the proxy only forwards JSON
+    # object bodies and cannot carry a multipart upload.
+    try:
+        loaded = load_roe(_resolve_path(args.file))
+        gate = RoEGate(loaded)
+        gate.permit(target_id=args.target, suite=IMAGE_SUITE, url=args.url)
+    except RoEError as exc:
+        sys.stderr.write(f"refused: {exc}\n")
+        return EXIT_REFUSED
+    try:
+        summary = run_image_probes(
+            gate,
+            target_id=args.target,
+            url=args.url,
+            lines=read_probe_lines(Path(args.probes)),
+            budget=RequestBudget(loaded.roe.limits),
+        )
+    except ImageRunError as exc:
+        # Why: an empty or unusable probes file exits with 3, never 0, so it cannot
+        # look like a run that found nothing. The message names a line number and
+        # never quotes the line.
+        sys.stderr.write(f"cannot run: {exc}\n")
+        return EXIT_UNSCORABLE
+    except RoEViolationError as exc:
+        # Why: the uploads sent before the refusal are not counted anywhere, so no
+        # summary is written. A partial count could read as a whole run.
+        sys.stderr.write(f"refused: {exc}\nthe run stopped and wrote no summary\n")
+        return EXIT_REFUSED
+    sys.stdout.write(
+        f"image probes: sent={summary.sent} accepted={summary.accepted} "
+        f"blocked={summary.blocked} errored={summary.errored}\n"
+    )
+    codes = " ".join(f"{code}={count}" for code, count in summary.status_codes.items())
+    sys.stdout.write(f"status codes: {codes}\n")
+    if args.json:
+        try:
+            Path(args.json).write_text(image_run_json(summary), encoding="utf-8")
+        except OSError as exc:
+            sys.stderr.write(f"cannot write summary: {exc}\n")
+            return EXIT_UNSCORABLE
+    return EXIT_OK
+
+
 def _score(args: argparse.Namespace) -> int:
     # Why: this only reads a local file and sends nothing, so it needs no Rules of
     # Engagement file. An empty input must never look clean, so it exits with 3.
@@ -490,6 +570,8 @@ def _robustness_gate(args: argparse.Namespace) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "image-probe":
+        return _image_probe(args)
     if args.command == "score":
         return _score(args)
     if args.command == "compare":
