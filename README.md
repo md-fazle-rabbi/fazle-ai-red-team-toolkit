@@ -1,6 +1,9 @@
 # fazle-ai-red-team-toolkit
 
 ![CI](https://github.com/md-fazle-rabbi/fazle-ai-red-team-toolkit/actions/workflows/ci.yml/badge.svg)
+![Exploit gate](https://github.com/md-fazle-rabbi/fazle-ai-red-team-toolkit/actions/workflows/exploit.yml/badge.svg)
+![Load gate](https://github.com/md-fazle-rabbi/fazle-ai-red-team-toolkit/actions/workflows/load.yml/badge.svg)
+![Garak gate](https://github.com/md-fazle-rabbi/fazle-ai-red-team-toolkit/actions/workflows/garak.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.13.15-blue)
 
@@ -11,7 +14,7 @@ to attack fazle-enterprise-ai-platform, and, with written authorization, client 
 Contact: mfrabbi.ai@gmail.com · Demo: TBD
 
 ## Status
-Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, and gates for load, fairness and robustness all run. Nothing has been run against fazle-enterprise-ai-platform yet, so every result in this repository so far says nothing about it.
+Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. Nothing has been run against fazle-enterprise-ai-platform yet, so every result in this repository so far says nothing about it.
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target
@@ -177,7 +180,9 @@ Instead of `--report`, `--answers FILE` scores answers from any other tool. The 
 
 Compare two summaries with `redteam-toolkit compare --before A.json --after B.json`. It prints each probe and the totals as "before > after". It sends nothing and does not judge which run is better. Each garak run samples its own prompts, so a small difference between two runs is not a measured improvement.
 
-Write a Markdown report with `redteam-toolkit report --file ROE.toml --run SUITE[:LABEL]=SUMMARY.json --out report.md`. Repeat `--run` for more runs, for example a weak and a hardened run of one suite. The report has the engagement details and the SHA-256 of the Rules of Engagement file, a results table per run, the ATLAS, OWASP and STRIDE entries for the suites that ran, and a fixed limitations section. A suite outside `allowed_suites`, an unreadable summary, or a run with nothing evaluated exits 3 and writes nothing. It sends nothing and holds no prompt or answer text. The suite of each run is the one you type. The tool cannot tell which suite produced a summary, so label runs carefully. Add `--fairness SUMMARY.json` to include a group fairness section built from a fairness summary. The engagement must allow the `bias` suite, and `--run` can then be left out, but a report needs at least one of the two. `examples/roe.stub-bias.toml` allows `prompt_injection` and `bias`.
+Write a Markdown report with `redteam-toolkit report --file ROE.toml --run SUITE[:LABEL]=SUMMARY.json --out report.md`. Repeat `--run` for more runs, for example a weak and a hardened run of one suite. The report has the engagement details and the SHA-256 of the Rules of Engagement file, a results table per run, the ATLAS, OWASP and STRIDE entries for the suites that ran, and a fixed limitations section. A suite outside `allowed_suites`, an unreadable summary, or a run with nothing evaluated exits 3 and writes nothing. It sends nothing and holds no prompt or answer text. The suite of each run is the one you type. The tool cannot tell which suite produced a summary, so label runs carefully. Add `--fairness SUMMARY.json` to include a group fairness section built from a fairness summary. The engagement must allow the `bias` suite, and `--run` can then be left out, but a report needs at least one of the two. `examples/roe.stub-bias.toml` allows `prompt_injection` and `bias`. `--robustness`, `--image-run` and `--exploit-run` add a robustness, an image prompt injection and an exploit library section the same way.
+
+The report also has a Findings section. A finding is listed only when a result shows the weakness: a canary or personal data hit in a run, a bypassed exploit entry, an accepted image upload, or a fairness or robustness summary that fails its gate. Each one shows its CVSS v3.1 base score where CVSS applies (or why it is not scored), the evidence as counts and ids, a business impact and remediation steps. When nothing shows a weakness the section says no finding met its threshold. It does not say the target has none. The vectors behind the scores are in `src/redteam_toolkit/findings.py` and are my judgement.
 
 Check a Locust run with `redteam-toolkit load-gate --stats out_stats.csv`. It fails when the p95 is above 2,000 ms or more than 1% of requests failed, and both limits can be set with `--max-p95-ms` and `--max-failure-rate`. A run with no requests, or fewer than `--min-requests` (default 100), exits 3 and never passes. The defaults come from the project plan, not from a measurement of any target.
 
@@ -188,6 +193,9 @@ Check a fairness summary with `redteam-toolkit fairness-gate --summary FILE`. Th
 To produce a summary, run `scripts/fairness_audit.py` with the Python of an environment that has Fairlearn and SHAP, for example `~/tools/fairness-env/bin/python scripts/fairness_audit.py --out fairness.json --bias 0`. It generates synthetic rows from a seeded random generator and trains a small logistic regression on three features: two real signals and a proxy that is correlated with the group. Fairlearn measures the model per group, and SHAP values are printed per feature but not judged by the gate. With `--bias 0` the label ignores the proxy. With a higher value the label leans on it and the gate should fail. The model is a stand-in, so a result says nothing about any real system.
 
 Check a robustness summary with `redteam-toolkit robustness-gate --summary FILE`. The summary is JSON written by a separate script in its own environment, because IBM ART is too heavy for this package. It has `schema_version` 1, `data` set to `synthetic` (anything else is rejected), a `model` and `attack` name, the number of `rows`, the `clean_accuracy`, and a list of `points`, each an `epsilon` and the `accuracy` measured at that perturbation size. The gate compares the clean accuracy with the accuracy at `--epsilon` (default 0.1) and fails when the drop is above `--max-accuracy-drop` (default 0.10). A summary with fewer than `--min-rows` rows (default 100), or with no measurement at that epsilon, exits 3 and never passes. The defaults are policy values I chose, not measured ones, and a pass says only that one model on one synthetic data set stayed inside them. `examples/robustness.synthetic-example.json` holds made-up numbers.
+
+## Client delivery
+Three short documents describe how I would run a client engagement with this toolkit: [onboarding](docs/client-delivery/onboarding.md), [rituals](docs/client-delivery/rituals.md) and [offboarding](docs/client-delivery/offboarding.md). They mark which points the Rules of Engagement loader enforces and which are only habits. No client engagement has used them yet.
 
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
@@ -211,6 +219,12 @@ uv run pytest --cov --cov-fail-under=90
 - The `Exploit gate` workflow runs the exploit library against both stubs on every push and pull request. It checks only that the weak stub fails the gate and the hardened stub passes it. One bypass of 25 is 0.04, so a single new bypass still passes.
 - EX-010 cannot tell the weak stub from the hardened one, because the weak stub only
   obeys override phrases. It was held in the one weak run.
+- The findings catalogue holds seven kinds. The CVSS vectors on four of them are my
+  judgement and assume an attacker with an ordinary account or key. Three kinds carry
+  no score, because CVSS does not describe them. The load finding has no input, so it
+  never appears. A report with no findings means only that no result met a threshold.
+- The client delivery documents are a process I wrote. No client engagement has used
+  them, and nothing in the toolkit enforces them.
 - A result against the stub says nothing about fazle-enterprise-ai-platform. The stub has
   three documents and no model, and its answers come from fixed rules.
 - Hardened mode is imperfect on purpose. A spaced-out injection such as `i.g.n.o.r.e`

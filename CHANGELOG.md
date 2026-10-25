@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Updated the README: badges for the exploit, load and garak workflows, a status line that names the report and its findings section, the report options for robustness, image and exploit summaries, a paragraph on the Findings section, a Client delivery section that links the three documents, and two limitations (the findings catalogue and the unused delivery process).
+
 - Added `docs/client-delivery/offboarding.md`: how an engagement is closed, covering stopping, revoking access, building the final report with a recorded hash, the handover, cleaning up, the close-out note and what to learn from the work. It sets no retention period, since that comes from the client agreement. No client engagement has used it yet.
 
 - Added `docs/client-delivery/rituals.md`: what I do before, during and at the end of each session of a client engagement, the stop rules, how a finding is handled, and why a scope change needs a new file with a new hash. It marks the points the toolkit enforces and says the rest are habits. No client engagement has used it yet.
