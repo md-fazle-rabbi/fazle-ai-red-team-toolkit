@@ -1,10 +1,11 @@
 """Build a Markdown report from a Rules of Engagement file and scored results.
 
 The report holds counts, rates and framework mappings only. Run summaries, the
-fairness summary, the robustness summary and the image run summary never carry
-prompt or answer text, so neither does the report. A run with nothing evaluated
-cannot be reported, and neither can a fairness, robustness or image summary that is
-too thin to judge, because a table of zeros would look like a clean result.
+fairness summary, the robustness summary, the image run summary and the exploit run
+summary never carry prompt or answer text, so neither does the report. A run with
+nothing evaluated cannot be reported, and neither can a fairness, robustness, image or
+exploit summary that is too thin to judge, because a table of zeros would look like a
+clean result.
 """
 
 from __future__ import annotations
@@ -15,6 +16,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
 
+from redteam_toolkit import exploit_gate
+from redteam_toolkit.exploit_run import EntryOutcome, ExploitRunSummary
 from redteam_toolkit.fairness import (
     DEFAULT_MAX_EQUALIZED_ODDS_DIFFERENCE,
     DEFAULT_MAX_PARITY_DIFFERENCE,
@@ -90,6 +93,16 @@ IMAGE_LIMITATIONS: Final[tuple[str, ...]] = (
     "not a measured one. A pass says one run stayed under it. It does not say the "
     "probes were hard.",
 )
+EXPLOIT_LIMITATIONS: Final[tuple[str, ...]] = (
+    "The exploit library probes are generic phrasings that aim at the planted "
+    "canary and the contact details of the local stub. Against any other target "
+    "they test less than a library written for it, and a result against the stub "
+    "says nothing about another system.",
+    "A bypass means the canary detector or the personal data detector fired on the "
+    "answer field. Retrieved context and citations are not scored. The bypass limit "
+    "is a policy value I chose, not a measured one. A pass says one run stayed under "
+    "it. It does not say the library was hard to get through.",
+)
 # Kept as one tuple for callers that want every fixed run limitation.
 LIMITATIONS: Final[tuple[str, ...]] = RUN_LIMITATIONS + COMMON_LIMITATIONS
 
@@ -132,14 +145,25 @@ def _rate(rate: float | None) -> str:
     return "n/a" if rate is None else f"{rate:.4f}"
 
 
+def _exploit_suites(summary: ExploitRunSummary) -> list[str]:
+    return list(dict.fromkeys(entry.suite for entry in summary.entries))
+
+
 def _check(
     loaded: LoadedRoE,
     runs: Sequence[RunInput],
     fairness: FairnessSummary | None,
     robustness: RobustnessSummary | None,
     image: ImageRunSummary | None,
+    exploit: ExploitRunSummary | None,
 ) -> None:
-    if not runs and fairness is None and robustness is None and image is None:
+    if (
+        not runs
+        and fairness is None
+        and robustness is None
+        and image is None
+        and exploit is None
+    ):
         raise ReportBuildError("no runs were given")
     allowed = loaded.roe.allowed_suites
     if fairness is not None and FAIRNESS_SUITE not in allowed:
@@ -154,6 +178,12 @@ def _check(
         raise ReportBuildError(
             f"suite {IMAGE_SUITE!r} is not in allowed_suites of the engagement"
         )
+    if exploit is not None:
+        for suite in _exploit_suites(exploit):
+            if suite not in allowed:
+                raise ReportBuildError(
+                    f"suite {suite!r} is not in allowed_suites of the engagement"
+                )
     seen: set[tuple[str, str]] = set()
     for run in runs:
         if run.suite not in allowed:
@@ -341,6 +371,65 @@ def _image_section(summary: ImageRunSummary) -> list[str]:
     ]
 
 
+def _count(entries: Sequence[EntryOutcome], outcome: str) -> int:
+    return sum(1 for entry in entries if entry.outcome == outcome)
+
+
+def _exploit_section(summary: ExploitRunSummary) -> list[str]:
+    try:
+        result = exploit_gate.evaluate_exploit_run(summary)
+    except exploit_gate.ExploitGateError as exc:
+        raise ReportBuildError(
+            f"the exploit run summary cannot be judged: {exc}"
+        ) from exc
+    outcome = (
+        "the bypass rate is below the limit."
+        if result.passed
+        else "; ".join(result.reasons) + "."
+    )
+    lines = [
+        f"### Exploit library ({', '.join(_exploit_suites(summary))})",
+        "",
+        "| category | sent | blocked | held | bypassed |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for category in sorted({entry.category for entry in summary.entries}):
+        group = [entry for entry in summary.entries if entry.category == category]
+        lines.append(
+            f"| {_cell(category)} | {len(group)} | {_count(group, 'blocked')} | "
+            f"{_count(group, 'held')} | {_count(group, 'bypassed')} |"
+        )
+    lines.append(
+        f"| all | {summary.sent} | {summary.blocked} | {summary.held} | "
+        f"{summary.bypassed} |"
+    )
+    lines += [
+        "",
+        f"Canaries checked: {summary.canaries_checked}.",
+        "",
+        f"Bypass rate: {result.bypass_rate:.4f} "
+        f"(limit {exploit_gate.DEFAULT_BYPASS_LIMIT:g}). A bypass means the canary "
+        "detector or the personal data detector fired on the answer field.",
+    ]
+    bypassed = [entry for entry in summary.entries if entry.outcome == "bypassed"]
+    if bypassed:
+        lines += [
+            "",
+            "Bypassed entries:",
+            "",
+            "| id | category | suite | OWASP LLM | OWASP Agentic |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        for entry in bypassed:
+            lines.append(
+                f"| {_cell(entry.id)} | {_cell(entry.category)} | "
+                f"{_cell(entry.suite)} | {_cell(', '.join(entry.owasp))} | "
+                f"{_cell(', '.join(entry.asi) or 'none')} |"
+            )
+    lines += ["", f"Result: {outcome}"]
+    return lines
+
+
 def _mapping(suites: Sequence[str]) -> list[str]:
     lines = [
         "## Threat mapping",
@@ -377,6 +466,7 @@ def _overview(
     fairness: FairnessSummary | None,
     robustness: RobustnessSummary | None,
     image: ImageRunSummary | None,
+    exploit: ExploitRunSummary | None,
 ) -> list[str]:
     lines: list[str] = []
     if runs:
@@ -398,6 +488,8 @@ def _overview(
         )
     if image is not None:
         lines.append(f"An image run of {image.sent} uploads is included.")
+    if exploit is not None:
+        lines.append(f"An exploit run of {exploit.sent} probes is included.")
     lines.append(f"Suites covered: {', '.join(suites)}.")
     return lines
 
@@ -410,8 +502,9 @@ def build_report(
     fairness: FairnessSummary | None = None,
     robustness: RobustnessSummary | None = None,
     image: ImageRunSummary | None = None,
+    exploit: ExploitRunSummary | None = None,
 ) -> str:
-    _check(loaded, runs, fairness, robustness, image)
+    _check(loaded, runs, fairness, robustness, image, exploit)
     suites = list(dict.fromkeys(run.suite for run in runs))
     if fairness is not None and FAIRNESS_SUITE not in suites:
         suites.append(FAIRNESS_SUITE)
@@ -419,6 +512,8 @@ def build_report(
         suites.append(ROBUSTNESS_SUITE)
     if image is not None and IMAGE_SUITE not in suites:
         suites.append(IMAGE_SUITE)
+    if exploit is not None:
+        suites += [s for s in _exploit_suites(exploit) if s not in suites]
     lines = [
         f"# Red team report: {loaded.roe.engagement_id}",
         "",
@@ -426,7 +521,7 @@ def build_report(
         "",
         "## Overview",
         "",
-        *_overview(runs, suites, fairness, robustness, image),
+        *_overview(runs, suites, fairness, robustness, image, exploit),
         "",
         *_engagement(loaded),
         "",
@@ -441,12 +536,15 @@ def build_report(
         lines += [*_robustness_section(robustness), ""]
     if image is not None:
         lines += [*_image_section(image), ""]
+    if exploit is not None:
+        lines += [*_exploit_section(exploit), ""]
     limitations = (
         (RUN_LIMITATIONS if runs else ())
         + COMMON_LIMITATIONS
         + (FAIRNESS_LIMITATIONS if fairness is not None else ())
         + (ROBUSTNESS_LIMITATIONS if robustness is not None else ())
         + (IMAGE_LIMITATIONS if image is not None else ())
+        + (EXPLOIT_LIMITATIONS if exploit is not None else ())
     )
     lines += [*_mapping(suites), "", "## Limitations", ""]
     lines += [f"- {item}" for item in limitations]

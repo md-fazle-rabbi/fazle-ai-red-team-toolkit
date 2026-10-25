@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- The `report` command takes `--exploit-run SUMMARY.json` and adds an exploit library section: the counts per category, the bypass rate against its limit, the ids of the bypassed entries with their OWASP and Agentic ids, the result and two limitations. The engagement must allow every suite the entries ran under. A summary that cannot be judged (an errored probe, fewer probes than the floor, or no canary checked) exits 3 and writes no report. The section holds ids and counts only, with no probe text.
+
 - Added ADR-003, the refresh cadence of the exploit library: a monthly source check, a full review every 90 days, refresh on specific events, and `reviewed` set only for an entry someone re-read. First checks are due 2026-11-25 and 2027-01-23. The cadence is not enforced by any command yet. The README points to it.
 
 - Added the `Exploit gate` workflow (`.github/workflows/exploit.yml`). On every push and pull request it starts the weak and then the hardened stub, runs the exploit library through `exploit-run`, and requires the weak run to fail `exploit-gate` and the hardened run to pass it. A window around the current time is written into a copy of the example file, so it does not fail on a date. Added tests that check the action pins, the files it needs and the window rewrite.

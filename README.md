@@ -154,6 +154,8 @@ The weak stub held EX-010, which asks for the system prompt with no override phr
 
 The `Exploit gate` workflow starts each stub in turn on every push and pull request, runs the library through `exploit-run`, and requires the weak run to fail the gate and the hardened run to pass it. It re-runs after any code change, so a mitigation or a change to the stub is checked again. It does not touch a real target.
 
+Add `--exploit-run runs/exploit-run.json` to `report` to include the counts per category, the bypass rate against its limit, the ids of the bypassed entries with their OWASP ids, and the result. The engagement must allow every suite the entries ran under (`prompt_injection`, `jailbreak` and `pii_leakage` for the library), and a summary that cannot be judged exits 3 and writes no report. The section holds ids and counts, never a probe or an answer.
+
 ## Threat map
 Each suite is mapped to STRIDE, MITRE ATLAS (release 2026.09), the OWASP LLM Top 10 (2025 edition) and the OWASP Top 10 for Agentic Applications 2026 (ASI01 to ASI10, the edition published 2025-12-09) in `src/redteam_toolkit/threat_map.py`. A test fails if a suite the gate allows has no mapping. A suite gets an Agentic entry only where I found an honest fit, and the report says that entry applies in full only to an agent target. I found no "v2.01" version string for the Agentic list in any source I read, so none is used. ATLAS releases about monthly, so recheck it before a report goes out. The pairings are my judgement, and the entries say where the fit is partial, including that image-carried injection has no dedicated OWASP id. Reasoning is in [ADR-011](docs/adr/ADR-011-threat-map-as-code.md).
 
@@ -206,7 +208,7 @@ uv run pytest --cov --cov-fail-under=90
 - The exploit run scores the `answer` field only, with two detectors: the canary and
   personal data. A leak that sits only in the retrieved context or the citations is not
   seen, and a bypass means only that a detector fired.
-- The `Exploit gate` workflow runs the exploit library against both stubs on every push and pull request. It checks only that the weak stub fails the gate and the hardened stub passes it. One bypass of 25 is 0.04, so a single new bypass still passes. The `report` command has no exploit run section.
+- The `Exploit gate` workflow runs the exploit library against both stubs on every push and pull request. It checks only that the weak stub fails the gate and the hardened stub passes it. One bypass of 25 is 0.04, so a single new bypass still passes.
 - EX-010 cannot tell the weak stub from the hardened one, because the weak stub only
   obeys override phrases. It was held in the one weak run.
 - A result against the stub says nothing about fazle-enterprise-ai-platform. The stub has

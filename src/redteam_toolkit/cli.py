@@ -328,6 +328,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--image-run",
         help="image-probe summary JSON to add as an image prompt injection section",
     )
+    report.add_argument(
+        "--exploit-run",
+        help="exploit-run summary JSON to add as an exploit library section",
+    )
     report.add_argument("--out", required=True, help="Markdown file to write")
 
     gate = sub.add_parser(
@@ -660,6 +664,11 @@ def _report(args: argparse.Namespace) -> int:
             read_robustness_summary(Path(args.robustness)) if args.robustness else None
         )
         image = read_image_run_summary(Path(args.image_run)) if args.image_run else None
+        exploit = (
+            exploit_gate.read_exploit_run_summary(Path(args.exploit_run))
+            if args.exploit_run
+            else None
+        )
         text = build_report(
             loaded,
             runs,
@@ -667,6 +676,7 @@ def _report(args: argparse.Namespace) -> int:
             fairness=fairness,
             robustness=robustness,
             image=image,
+            exploit=exploit,
         )
         Path(args.out).write_text(text, encoding="utf-8")
     except (
@@ -675,6 +685,7 @@ def _report(args: argparse.Namespace) -> int:
         FairnessError,
         RobustnessError,
         ImageGateError,
+        exploit_gate.ExploitGateError,
         ReportBuildError,
     ) as exc:
         sys.stderr.write(f"cannot report: {exc}\n")
