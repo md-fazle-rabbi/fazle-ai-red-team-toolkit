@@ -1,0 +1,22 @@
+Where the three request counts of one load run come from.
+Derived from proof/load-gate-ci-run.txt (CI run of 2026-10-23) and proof/load-measure-run.txt.
+No new load run. This is arithmetic on numbers already recorded.
+
+CI run: Locust CSV (what load-gate read) = 11887 requests at 625.19 per second
+CI run: Locust final table               = 12204 requests at 625.81 per second
+CI run: proxy audit                      = 12232 forwarded
+
+seconds covered by the CSV snapshot: 19.01
+seconds covered by the final table:  19.50
+table minus CSV:  317 requests
+audit minus table: 28 requests
+audit minus CSV:   345 requests
+
+local, 50 users: audit minus CSV = 147, upper bound (1 s of traffic + one per user) = 180
+local, 10 users: audit minus CSV = 101, upper bound (1 s of traffic + one per user) = 139
+CI, 50 users: audit minus CSV = 345, upper bound (1 s of traffic + one per user) = 675
+
+Reading: Locust 2.47.0 rewrites NAME_stats.csv once a second (CSV_STATS_INTERVAL_SEC = 1)
+and close_files only closes the files, so the CSV is the last one second snapshot.
+The proxy audit also counts requests still in flight at shutdown.
+Every gap above is inside that bound. This was not confirmed by a run built to test it.
