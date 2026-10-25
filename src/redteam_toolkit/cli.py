@@ -3,7 +3,8 @@
 Exit codes: 0 means authorized, clean, passed or a probe run finished, 1 means a
 detector flagged an answer or a gate failed, 2 means the Rules of Engagement file
 refused the request, including a run that used up its request total, 3 means a report,
-summary, stats or probes file could not be read or judged.
+summary, stats or probes file could not be read or judged, or the header or timeout
+settings could not be used.
 """
 
 import argparse
@@ -13,6 +14,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+import httpx2
 import uvicorn
 
 from redteam_toolkit import exploit_gate, exploit_library, exploit_run
@@ -87,6 +89,11 @@ from redteam_toolkit.summary import (
     read_summary,
     summarize,
     summary_json,
+)
+from redteam_toolkit.target_client import (
+    TargetClientError,
+    add_client_arguments,
+    client_from_args,
 )
 
 EXIT_OK = 0
@@ -198,6 +205,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         help="also write a JSON summary (counts only) to this file",
     )
+    add_client_arguments(image)
 
     image_gate = sub.add_parser(
         "image-gate",
@@ -242,6 +250,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         help="also write a JSON summary (ids and counts only) to this file",
     )
+    add_client_arguments(exploit)
 
     exploit_gate_parser = sub.add_parser(
         "exploit-gate",
@@ -473,18 +482,25 @@ def _image_probe(args: argparse.Namespace) -> int:
     except RoEError as exc:
         sys.stderr.write(f"refused: {exc}\n")
         return EXIT_REFUSED
+    # Why: the client is built only after the probes file is read, so a bad probes
+    # file and a bad header setting both send nothing. With no --header-env and no
+    # --timeout it stays None and send_probe builds its own client, as it always did.
+    client: httpx2.Client | None = None
     try:
+        lines = read_probe_lines(Path(args.probes))
+        client = client_from_args(args)
         summary = run_image_probes(
             gate,
             target_id=args.target,
             url=args.url,
-            lines=read_probe_lines(Path(args.probes)),
+            lines=lines,
+            client=client,
             budget=RequestBudget(loaded.roe.limits),
         )
-    except ImageRunError as exc:
+    except (ImageRunError, TargetClientError) as exc:
         # Why: an empty or unusable probes file exits with 3, never 0, so it cannot
         # look like a run that found nothing. The message names a line number and
-        # never quotes the line.
+        # never quotes the line. A header problem names the variable, never its value.
         sys.stderr.write(f"cannot run: {exc}\n")
         return EXIT_UNSCORABLE
     except RoEViolationError as exc:
@@ -492,6 +508,9 @@ def _image_probe(args: argparse.Namespace) -> int:
         # summary is written. A partial count could read as a whole run.
         sys.stderr.write(f"refused: {exc}\nthe run stopped and wrote no summary\n")
         return EXIT_REFUSED
+    finally:
+        if client is not None:
+            client.close()
     sys.stdout.write(
         f"image probes: sent={summary.sent} accepted={summary.accepted} "
         f"blocked={summary.blocked} errored={summary.errored}\n"
@@ -547,22 +566,34 @@ def _exploit_run(args: argparse.Namespace) -> int:
     except RoEError as exc:
         sys.stderr.write(f"refused: {exc}\n")
         return EXIT_REFUSED
+    # Why: as in image-probe, the client is built after the library is read and stays
+    # None when no option asks for one.
+    client: httpx2.Client | None = None
     try:
         library = exploit_library.load_library(Path(args.library))
+        client = client_from_args(args)
         summary = exploit_run.run_exploit_library(
             gate,
             target_id=args.target,
             url=args.url,
             entries=library.exploit,
             canaries=args.canary,
+            client=client,
             budget=RequestBudget(loaded.roe.limits),
         )
-    except (exploit_library.ExploitLibraryError, exploit_run.ExploitRunError) as exc:
+    except (
+        exploit_library.ExploitLibraryError,
+        exploit_run.ExploitRunError,
+        TargetClientError,
+    ) as exc:
         sys.stderr.write(f"cannot run: {exc}\n")
         return EXIT_UNSCORABLE
     except RoEViolationError as exc:
         sys.stderr.write(f"refused: {exc}\nthe run stopped and wrote no summary\n")
         return EXIT_REFUSED
+    finally:
+        if client is not None:
+            client.close()
     sys.stdout.write(f"exploit run: {exploit_gate.format_counts(summary)}")
     sys.stdout.write(f"canaries checked: {summary.canaries_checked}\n")
     if args.json:

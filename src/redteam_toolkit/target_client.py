@@ -11,6 +11,7 @@ request budget still apply to every request. This module sends nothing itself.
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 from collections.abc import Mapping, Sequence
@@ -113,3 +114,40 @@ def build_client(
         follow_redirects=False,
         trust_env=False,
     )
+
+
+def add_client_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add --header-env and --timeout to a command that sends requests."""
+    parser.add_argument(
+        "--header-env",
+        action="append",
+        default=[],
+        metavar="HEADER=ENV_VAR",
+        help=(
+            "send HEADER with the value held in environment variable ENV_VAR "
+            "(repeat for more). Give the names only, never the value"
+        ),
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT_SECONDS,
+        metavar="SECONDS",
+        help=(
+            "seconds to wait for each response "
+            f"(default: {DEFAULT_TIMEOUT_SECONDS:g}, at most {MAX_TIMEOUT_SECONDS:g})"
+        ),
+    )
+
+
+def client_from_args(args: argparse.Namespace) -> httpx2.Client | None:
+    """Build the client the options ask for, or None when they ask for nothing.
+
+    None means send_probe builds its own client for each request, exactly as it did
+    before these options existed. The caller closes a client that is returned.
+    """
+    header_specs: list[str] = args.header_env
+    timeout: float = args.timeout
+    if not header_specs and timeout == DEFAULT_TIMEOUT_SECONDS:
+        return None
+    return build_client(header_specs=header_specs, timeout=timeout)
