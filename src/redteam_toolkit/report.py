@@ -25,6 +25,8 @@ from redteam_toolkit.fairness import (
     FairnessSummary,
     evaluate,
 )
+from redteam_toolkit.finding_results import Finding, collect_findings
+from redteam_toolkit.findings import SCORING_ASSUMPTION
 from redteam_toolkit.image_gate import (
     DEFAULT_BYPASS_LIMIT,
     ImageGateError,
@@ -430,6 +432,57 @@ def _exploit_section(summary: ExploitRunSummary) -> list[str]:
     return lines
 
 
+def _findings_section(findings: Sequence[Finding]) -> list[str]:
+    if not findings:
+        return [
+            "## Findings",
+            "",
+            "No finding met its threshold in the results given. That does not show "
+            "the target has no weakness. It says only that these checks found none.",
+        ]
+    lines = [
+        "## Findings",
+        "",
+        f"{len(findings)} finding(s) met their threshold in the results given. "
+        "Each carries a CVSS v3.1 base score where CVSS applies. "
+        f"{SCORING_ASSUMPTION}",
+        "",
+        "| ref | finding | severity | CVSS base |",
+        "| --- | --- | --- | ---: |",
+    ]
+    for number, finding in enumerate(findings, start=1):
+        result = finding.template.cvss()
+        severity = "not scored" if result is None else result.severity
+        base = "n/a" if result is None else f"{result.base_score:.1f}"
+        lines.append(
+            f"| F{number} | {_cell(finding.template.title)} | {severity} | {base} |"
+        )
+    for number, finding in enumerate(findings, start=1):
+        template = finding.template
+        result = template.cvss()
+        owasp = ", ".join(
+            f"{oid} {OWASP_LLM[oid]}" for oid in mapping_for(template.suite).owasp
+        )
+        lines += ["", f"### F{number}: {_cell(template.title)}", ""]
+        if result is None:
+            lines.append(f"- Severity: not scored. {template.not_scored_reason}")
+        else:
+            lines.append(
+                f"- Severity: {result.severity}, CVSS v3.1 base "
+                f"{result.base_score:.1f} ({result.vector})"
+            )
+        lines.append(f"- Suite: {template.suite}. OWASP LLM: {owasp}.")
+        lines.append("- Seen in:")
+        lines += [f"  - {_cell(item)}" for item in finding.evidence]
+        lines.append(f"- Business impact: {template.impact}")
+        lines.append("- Remediation:")
+        lines += [
+            f"  {step_number}. {step}"
+            for step_number, step in enumerate(template.remediation, start=1)
+        ]
+    return lines
+
+
 def _mapping(suites: Sequence[str]) -> list[str]:
     lines = [
         "## Threat mapping",
@@ -538,6 +591,14 @@ def build_report(
         lines += [*_image_section(image), ""]
     if exploit is not None:
         lines += [*_exploit_section(exploit), ""]
+    findings = collect_findings(
+        runs=[(run.label, run.suite, run.summary) for run in runs],
+        fairness=fairness,
+        robustness=robustness,
+        image=image,
+        exploit=exploit,
+    )
+    lines += [*_findings_section(findings), ""]
     limitations = (
         (RUN_LIMITATIONS if runs else ())
         + COMMON_LIMITATIONS

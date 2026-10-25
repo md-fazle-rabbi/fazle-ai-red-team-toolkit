@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- The `report` command now adds a Findings section. A finding is listed only when a result shows the weakness: a canary or personal data hit in a run, a bypassed exploit entry, an accepted image upload, or a fairness or robustness summary that fails its gate. Each finding shows its CVSS v3.1 base score where CVSS applies (or why it is not scored), the evidence as counts and ids, a plain-English business impact and remediation steps. A run that shows nothing says no finding met its threshold and does not claim the target has no weakness. The load finding has no input yet, so it never appears. Added `redteam_toolkit/finding_results.py`.
+
 - Added `redteam_toolkit/findings.py`, a catalogue of seven finding kinds. Each has a title, the suite it belongs to, a plain-English business impact and remediation steps. Four carry a CVSS v3.1 base vector, which is my judgement and assumes an attacker with an ordinary account or key. Three (group outcome gap, evasion accuracy drop, load limit breach) carry no score and the reason, because CVSS does not describe them. Nothing reads the catalogue yet.
 
 - Added `redteam_toolkit/cvss.py`, which computes a CVSS v3.1 base score and severity from a base vector string. It only does the arithmetic and does not pick a vector for any finding. It refuses temporal and environmental metrics.

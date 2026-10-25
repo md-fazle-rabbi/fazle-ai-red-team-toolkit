@@ -1,0 +1,7 @@
+All checks passed!
+99 files already formatted
+Success: no issues found in 77 source files
+TOTAL    2072      0    532      0   100%
+772 passed in 9.70s
+ src/redteam_toolkit/report.py | 61 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
