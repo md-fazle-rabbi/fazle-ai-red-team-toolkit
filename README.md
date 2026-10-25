@@ -202,7 +202,7 @@ uv run pytest --cov --cov-fail-under=90
 - The exploit library holds 25 probes, the low end of the 25 to 31 the plan calls for.
   Every one aims at the stub's canary and contact details, so it is a start and not
   coverage of what attackers try. All 25 entries were added and reviewed on 2026-10-25,
-  so there is no refresh history yet, and the refresh cadence is not written down.
+  so there is no refresh history yet. The refresh cadence is in [ADR-003](docs/adr/ADR-003-exploit-library-refresh-cadence.md), and nothing enforces it yet.
 - The exploit run scores the `answer` field only, with two detectors: the canary and
   personal data. A leak that sits only in the retrieved context or the citations is not
   seen, and a bypass means only that a detector fired.

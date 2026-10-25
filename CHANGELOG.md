@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added ADR-003, the refresh cadence of the exploit library: a monthly source check, a full review every 90 days, refresh on specific events, and `reviewed` set only for an entry someone re-read. First checks are due 2026-11-25 and 2027-01-23. The cadence is not enforced by any command yet. The README points to it.
+
 - Added the `Exploit gate` workflow (`.github/workflows/exploit.yml`). On every push and pull request it starts the weak and then the hardened stub, runs the exploit library through `exploit-run`, and requires the weak run to fail `exploit-gate` and the hardened run to pass it. A window around the current time is written into a copy of the example file, so it does not fail on a date. Added tests that check the action pins, the files it needs and the window rewrite.
 
 - Updated the README. The status and the first known limitation said no attack suite exists, which stopped being true. Added an Exploit library section with the commands, the exit codes, the stub results from 2026-10-25 and what they do not show, named the Agentic list in the threat map text, and added limitations for the library size, EX-010, answer only scoring, and the missing report section and CI re-run.
