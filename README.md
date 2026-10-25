@@ -14,7 +14,7 @@ to attack fazle-enterprise-ai-platform, and, with written authorization, client 
 Contact: mfrabbi.ai@gmail.com · Demo: TBD
 
 ## Status
-Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. Nothing has been run against fazle-enterprise-ai-platform yet, so every result in this repository so far says nothing about it.
+Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. Nothing has been run against fazle-enterprise-ai-platform yet, so every result in this repository so far says nothing about it. Screenshot of the passing workflows for commit a0f86b0, taken 2026-10-25: [proof/ci-final-green.png](proof/ci-final-green.png).
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target

@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `proof/ci-final-green.png`, a screenshot of the four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit a0f86b0, and linked it from the README status. The runs of the commit before it show a red cross because the newer push cancelled them (`cancel-in-progress`), not because a check failed.
+
 - Explained the gap between the request counts of one load run. The load gate reads Locust's `_stats.csv`, which Locust 2.47.0 rewrites once a second and never after the last request, so it trails the end of the run by up to a second. The proxy audit counts every forwarded request. The CI run of 2026-10-23 gave 11,887 (CSV), 12,204 (final table) and 12,232 (audit), and each gap fits inside one second of traffic plus one request in flight per user. Added `proof/load-count-gap.txt` and a README sentence. This is arithmetic on existing logs and Locust's source. No run was built to confirm it.
 
 - Added an addendum to ADR-010 recording which Trivy version Repo 1 runs. Its workflow pins `trivy-action` v0.36.0 by SHA and sets no version, so the action default, Trivy v0.70.0, applies. The log of one Repo 1 run (2026-10-19, job web-build-and-scan) confirms v0.70.0 and shows Trivy reporting 0.76.0 as available. The advisory lists no later version as safe or as malicious, so the addendum says it is neither flagged nor cleared.
