@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added `docs/client-delivery/onboarding.md`, the checklist for starting a client engagement: what to get before writing the Rules of Engagement file, how to build and check it, the kickoff agenda, a dry run on the local stub and a go or no go list. It marks which items the loader enforces and which are only habits. No client engagement has used it yet.
+
 - Corrected the README limitation on `RequestBudget`. It still said the budget is not thread safe and that `concurrency` is not enforced. `acquire` has a lock, and the gated proxy holds at most `concurrency` requests in flight. The class itself still does not enforce `concurrency`, and the README now says so.
 
 - The `report` command now adds a Findings section. A finding is listed only when a result shows the weakness: a canary or personal data hit in a run, a bypassed exploit entry, an accepted image upload, or a fairness or robustness summary that fails its gate. Each finding shows its CVSS v3.1 base score where CVSS applies (or why it is not scored), the evidence as counts and ids, a plain-English business impact and remediation steps. A run that shows nothing says no finding met its threshold and does not claim the target has no weakness. The load finding has no input yet, so it never appears. Added `redteam_toolkit/finding_results.py`.
