@@ -4,6 +4,8 @@
 
 ### 2026-10-25
 
+- Added 11 more probes to `exploits/library.toml`, which now holds 25: six role confusion probes (a claimed role or a fake turn marker around an override), three more override variants and two more contact lookups. Every category has at least three probes. The stub has no idea of roles, so on the stub the role wording is decoration and the override phrase does the work. A test checks that each category has at least three probes and that the library holds 25 to 31 entries. Nothing runs the probes yet.
+
 - Added `exploits/library.toml` with the first 14 probes of the exploit library: nine override variants (different separators, case, zero width characters, a quoted frame), one direct request for the system prompt, three contact lookups and one override followed by a lookup. Each is tagged to OWASP LLM Top 10 ids, and the override variants also to ASI01. The probes are generic phrasings that aim at the local stub canary and synthetic contact details. Nothing runs them yet. A test loads the committed file and checks that the ids run in order, that no probe repeats and that no probe holds the canary, an email or a phone number.
 
 - Added `redteam_toolkit/exploit_library.py`, which loads and validates a TOML library of exploit probes. Each entry has an id such as EX-001, a title, one of three categories (injection_variant, data_exfiltration, role_confusion), one or more OWASP LLM Top 10 ids, optional OWASP Agentic ids, the probe text, and an added and a reviewed date that a refresh cadence can be measured against. Every id must exist in the threat map lists, ids must be unique, and an error names the field and never quotes the probe. There is no library file and no command that runs it yet.
