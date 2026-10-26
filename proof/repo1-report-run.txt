@@ -1,0 +1,6 @@
+2026-10-26T21:15:01Z
+report written: proof/report-repo1-before-fix.md
+report before-fix exit=0
+report written: proof/report-repo1-after-fix.md
+report after-fix exit=0
+2026-10-26T21:15:03Z
