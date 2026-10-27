@@ -18,7 +18,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 |---|---|---|
 | Scope gate | No valid Rules of Engagement file, no request. A refusal exits 2 and sends nothing | [`proof/roe-gate-demo.txt`](proof/roe-gate-demo.txt), [`proof/roe-gate-local-checks.txt`](proof/roe-gate-local-checks.txt) |
 | Exploit library | 25 probes tagged to OWASP LLM Top 10 ids. On the local stub the weak mode bypassed 24 of 25 and the gate exited 1. The hardened mode bypassed none and the gate exited 0. The hardened stub was built next to these probes, so that is not a measure of how hard the library is | [`proof/exploit-commands-local-checks.txt`](proof/exploit-commands-local-checks.txt) |
-| Against Repo 1 (local) | The 25 exploit probes run twice against a local fazle-enterprise-ai-platform with a synthetic tenant. First run: 3 bypassed (rate 0.1200, gate exit 1). After a redaction fix in Repo 1: none (rate 0.0000, gate exit 0). One run each, 25 probes, a weak signal | [`proof/repo1-exploit-run.txt`](proof/repo1-exploit-run.txt), [`proof/repo1-exploit-run-after-fix.txt`](proof/repo1-exploit-run-after-fix.txt) |
+| Against Repo 1 (local) | The 25 exploit probes run twice against a local fazle-enterprise-ai-platform with a synthetic tenant. First run: 3 bypassed (rate 0.1200, gate exit 1). After a redaction fix in Repo 1: none (rate 0.0000, gate exit 0). One run each, 25 probes, a weak signal | [`proof/repo1-exploit-run.txt`](proof/repo1-exploit-run.txt), [`proof/repo1-exploit-run-after-fix.txt`](proof/repo1-exploit-run-after-fix.txt), [before-fix report](proof/report-repo1-before-fix.md), [after-fix report](proof/report-repo1-after-fix.md), [database rows](proof/repo1-run-database-evidence.txt) |
 | Image probes | `image-probe` and `image-gate` send images through the gate and judge the bypass rate. A stand-in extractor reads PNG metadata, so this is not OCR and not a vision model | [`proof/image-gate-run.txt`](proof/image-gate-run.txt), [`proof/image-report-end-to-end-run.txt`](proof/image-report-end-to-end-run.txt) |
 | Third party tools stay in scope | A local gated proxy forwards an in-scope request, answers 403 to a path outside the file, and audits both without bodies. garak runs through it | [`proof/gated-proxy-smoke.txt`](proof/gated-proxy-smoke.txt) |
 | Load gate in CI | One run on a GitHub runner: 50 users for 20 s through the proxy, p95 88 ms, no failures. One run against a stub, not a measured safe limit | [`proof/load-gate-ci-run.txt`](proof/load-gate-ci-run.txt), [`proof/load-count-gap.txt`](proof/load-count-gap.txt) |
@@ -26,7 +26,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 | Client report | A Markdown report with the SHA-256 of the scope file, results, a Findings section with CVSS v3.1 scores where CVSS applies, framework mappings and fixed limitations | [`proof/report-stub-local.md`](proof/report-stub-local.md), [`proof/report-findings-local-checks.txt`](proof/report-findings-local-checks.txt) |
 | Threat map | Every suite is mapped to STRIDE, MITRE ATLAS, the OWASP LLM Top 10 and, where there is an honest fit, the OWASP Agentic list. A test fails when a suite is left out | [`docs/threat-map.svg`](docs/threat-map.svg) |
 | Client delivery process | Onboarding, rituals and offboarding documents. No client engagement has used them yet | [`docs/client-delivery`](docs/client-delivery) |
-| CI | Four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit a0f86b0 | [`proof/ci-final-green.png`](proof/ci-final-green.png) |
+| CI | Four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit 4248ef8 | [`proof/ci-final-green.png`](proof/ci-final-green.png) |
 
 *Every result above except the Repo 1 row is against a local stub with synthetic data. The Repo 1 row is one local stack with a synthetic tenant, not a real system.*
 
@@ -43,7 +43,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 - 10 minutes: the sections for the exploit library, image probes and the report, then the decisions in [docs/adr](docs/adr).
 
 ## Status
-Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. The exploit library has been run twice against a local fazle-enterprise-ai-platform (see Running against Repo 1). Every other result in this repository is against a stub or synthetic data and says nothing about it. Screenshot of the passing workflows for commit a0f86b0, taken 2026-10-25: [proof/ci-final-green.png](proof/ci-final-green.png).
+Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. The exploit library has been run twice against a local fazle-enterprise-ai-platform (see Running against Repo 1). Every other result in this repository is against a stub or synthetic data and says nothing about it. Screenshot of the passing workflows for commit 4248ef8, taken 2026-10-27: [proof/ci-final-green.png](proof/ci-final-green.png).
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target
@@ -279,7 +279,7 @@ The file allows 2 requests per minute, so 25 probes take about 12 minutes. One r
 | Bypassed ids | EX-011, EX-012, EX-024 | none |
 | Bypass rate (limit 0.05) | 0.1200, gate exit 1 | 0.0000, gate exit 0 |
 
-The first run is kept on purpose, with its proof: [`proof/repo1-exploit-run.txt`](proof/repo1-exploit-run.txt) and [`proof/repo1-exploit-run-after-fix.txt`](proof/repo1-exploit-run-after-fix.txt). What these runs do and do not show is in the first four limitations below.
+The first run is kept on purpose, with its proof: [`proof/repo1-exploit-run.txt`](proof/repo1-exploit-run.txt) and [`proof/repo1-exploit-run-after-fix.txt`](proof/repo1-exploit-run-after-fix.txt). What these runs do and do not show is in the first four limitations below. The two reports made from the summaries are [`proof/report-repo1-before-fix.md`](proof/report-repo1-before-fix.md) and [`proof/report-repo1-after-fix.md`](proof/report-repo1-after-fix.md). Afterwards the data of the test tenants was deleted ([`proof/repo1-test-data-cleanup.txt`](proof/repo1-test-data-cleanup.txt)), and the database rows of the two run windows are kept in [`proof/repo1-run-database-evidence.txt`](proof/repo1-run-database-evidence.txt). The example scope file ends on 2026-11-18, so a copy needs new dates after that.
 
 ## Develop locally
 Needs uv 0.12.21. uv installs Python 3.13.15 for you.
