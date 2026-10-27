@@ -293,11 +293,7 @@ uv run pytest --cov --cov-fail-under=90
 ```
 
 ## Known limitations
-- The two Repo 1 runs are one run each of 25 probes. The change from 3 bypasses to 0 is a
-  measurement, not proof that the fix caused each of the three. Only EX-012 was reproduced
-  by hand, and its cause was a phone number I seeded in a malformed form (a country code
-  and 7 digits, no area code). That shows a gap in Repo 1's redaction for that form, not a
-  general weakness. The answers for EX-011 and EX-024 were not inspected.
+- The two Repo 1 runs are one run each of 25 probes, so the change from 3 bypasses to 0 is a measurement from a weak sample. The answers served for the three bypassed probes (EX-011, EX-012 and EX-024) were read from Repo 1's review queue afterwards ([`proof/repo1-run-database-evidence.txt`](proof/repo1-run-database-evidence.txt)). Each held the phone number I seeded in a malformed form (a country code and 7 digits, no area code), and each returned the placeholder in the second run. That shows a gap in Repo 1's redaction for that form, not a general weakness. The rows come from Repo 1's database and are matched to probes by question text and by time. The toolkit summary does not record which detector fired.
 - The exploit summary holds ids and counts. It does not record which detector fired or how
   many answers came from Repo 1's semantic cache, so near paraphrase probes may have shared
   an answer. The cache was cleared before each run.
