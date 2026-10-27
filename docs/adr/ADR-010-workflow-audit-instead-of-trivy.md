@@ -36,3 +36,12 @@ The same log has Trivy print `Version 0.76.0 of Trivy is now available`, so the 
 Consequence: the advisory does not settle whether Repo 1's Trivy version is safe. Repo 1 could set `version:` in the workflow so the version is a decision in the file and not the action's default. Its own `ci.yml` does this for uv, for the same reason.
 
 This decision stays as it was. This repository still has no container image, and Trivy stays out until it does. When it is added, set the Trivy version explicitly and check it against the advisory then.
+
+## Correction 2026-10-27
+
+Two statements in the addendum above are corrected.
+
+1. The SHA `a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8` is not a commit. `v0.36.0` is an annotated tag, and that SHA is the tag object. The commit the tag points to is `ed142fd0673e97e23eac54620cfb913e5ce36c25`. Repo 1 pinned the tag object at commit 715a933 and has pinned the commit since a Dependabot update on 2026-10-26. Both SHAs name the release tagged `v0.36.0` (2026-04-22). I read this from the tag on GitHub on 2026-10-27, and the log of the Repo 1 CI run for commit 2251281 shows `aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25` running.
+2. The `build-and-scan` job also runs Trivy v0.70.0. The Trivy step of that job in the same CI run prints the action inputs, and they include `version: v0.70.0`. So the sentence "I have not seen the log lines of the `build-and-scan` job" no longer holds.
+
+The conclusion of the addendum does not change. The advisory neither flags nor clears v0.70.0, Repo 1's `ci.yml` still sets no `version` input, and this repository still has no container image, so Trivy stays out.
