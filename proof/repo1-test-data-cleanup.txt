@@ -1,0 +1,45 @@
+2026-10-27T08:05:28Z
+--- counts before
+         tbl          | count 
+----------------------+-------
+ documents            |     9
+ chunks               |     9
+ review_queue         |    11
+ query_log            |    19
+ conversations        |     0
+ messages             |     0
+ entities             |     0
+ entity_relationships |     0
+(8 rows)
+
+counts match the earlier read, deleting
+BEGIN
+DELETE 0
+DELETE 0
+DELETE 11
+DELETE 19
+DELETE 9
+COMMIT
+--- counts after
+         tbl          | count 
+----------------------+-------
+ documents            |     0
+ chunks               |     0
+ review_queue         |     0
+ query_log            |     0
+ conversations        |     0
+ messages             |     0
+ entities             |     0
+ entity_relationships |     0
+(8 rows)
+
+ audit_rows_total 
+------------------
+               89
+(1 row)
+
+redis keys before: 1
+redis keys after: 0
+redis keys before: 0
+redis keys after: 0
+2026-10-27T08:05:31Z
