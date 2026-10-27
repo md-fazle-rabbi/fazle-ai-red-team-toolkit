@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-27
+
 ### 2026-10-27
+
+- Replaced `proof/ci-final-green.png` with a screenshot of the Actions page that shows four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit 864693d. The earlier file showed only the CI workflow, for commit 4248ef8.
 
 - Added `docs/adr/README.md`, an index of the decision records. It explains the numbering: ADR-001, ADR-002, ADR-004 and ADR-005 are in the reference target repository, and ADR-003 is only here.
 

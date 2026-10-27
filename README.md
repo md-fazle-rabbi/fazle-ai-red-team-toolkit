@@ -26,7 +26,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 | Client report | A Markdown report with the SHA-256 of the scope file, results, a Findings section with CVSS v3.1 scores where CVSS applies, framework mappings and fixed limitations | [`proof/report-stub-local.md`](proof/report-stub-local.md), [`proof/report-findings-local-checks.txt`](proof/report-findings-local-checks.txt) |
 | Threat map | Every suite is mapped to STRIDE, MITRE ATLAS, the OWASP LLM Top 10 and, where there is an honest fit, the OWASP Agentic list. A test fails when a suite is left out | [`docs/threat-map.svg`](docs/threat-map.svg) |
 | Client delivery process | Onboarding, rituals and offboarding documents. No client engagement has used them yet | [`docs/client-delivery`](docs/client-delivery) |
-| CI | Four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit 4248ef8 | [`proof/ci-final-green.png`](proof/ci-final-green.png) |
+| CI | Four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit 864693d | [`proof/ci-final-green.png`](proof/ci-final-green.png) |
 
 *Every result above except the Repo 1 row is against a local stub with synthetic data. The Repo 1 row is one local stack with a synthetic tenant, not a real system.*
 
@@ -43,7 +43,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 - 10 minutes: the sections for the exploit library, image probes and the report, then the decisions in [docs/adr](docs/adr).
 
 ## Status
-Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. The exploit library has been run twice against a local fazle-enterprise-ai-platform (see Running against Repo 1). Every other result in this repository is against a stub or synthetic data and says nothing about it. Screenshot of the passing workflows for commit 4248ef8, taken 2026-10-27: [proof/ci-final-green.png](proof/ci-final-green.png).
+Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. The exploit library has been run twice against a local fazle-enterprise-ai-platform (see Running against Repo 1). Every other result in this repository is against a stub or synthetic data and says nothing about it. Screenshot of the passing workflows for commit 864693d, taken 2026-10-27: [proof/ci-final-green.png](proof/ci-final-green.png).
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target

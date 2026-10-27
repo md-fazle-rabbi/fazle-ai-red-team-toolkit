@@ -49,7 +49,7 @@ when they go through the local proxy. The client delivery documents in
 limitations section of the README.
 
 ## Supported versions
-Only the latest commit on the main branch is maintained.
+Only the latest release and the main branch are maintained.
 
 ## Reporting a vulnerability
 If you find a security issue in the toolkit itself, not in a system you tested with it,
