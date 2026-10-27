@@ -4,6 +4,8 @@
 
 ### 2026-10-27
 
+- Added `docs/adr/README.md`, an index of the decision records. It explains the numbering: ADR-001, ADR-002, ADR-004 and ADR-005 are in the reference target repository, and ADR-003 is only here.
+
 - Corrected two statements in the ADR-010 addendum about Repo 1's Trivy pin. The pinned SHA a9c7b0f is the annotated tag object of `trivy-action` v0.36.0, not a commit, and the commit it points to is ed142fd, which Repo 1 has pinned since 2026-10-26. The `build-and-scan` job also runs Trivy v0.70.0. The correction is appended to the ADR, and the original text is kept.
 
 - Deleted the data of the two synthetic test tenants from the local Repo 1 database after the runs, so a later run starts empty: 9 documents with their 9 chunks, 11 review queue rows and 19 query log rows, and the tenants' Redis keys (`proof/repo1-test-data-cleanup.txt`). The audit log keeps its rows (89 in total across tenants), because it is insert only by design. What the two runs showed is kept in the proof files in this folder, not in that database.
