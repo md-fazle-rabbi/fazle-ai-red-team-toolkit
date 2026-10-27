@@ -2,8 +2,8 @@
 
 ## What this repository is
 fazle-ai-red-team-toolkit is an automated red-team and evaluation suite for LLM
-applications: prompt injection, PII leakage, jailbreak, bias, adversarial ML,
-supply-chain and rogue-agent test cases. It is built to run against systems the
+applications: prompt injection, jailbreak, PII leakage, image prompt injection, bias and
+adversarial robustness checks. It is built to run against systems the
 operator owns or has explicit written authorization to test.
 
 ## Authorized testing only
