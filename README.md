@@ -10,7 +10,7 @@
 **An authorized red-team and evaluation toolkit for LLM and RAG applications. It refuses to run without a written scope file, scores what comes back, and writes a report that holds counts, ids and framework mappings, never prompts or answers.**
 
 ## Hire me
-**Fazle Rabbi, Secure Production AI Systems Engineer.** I build production AI systems that pass security review, then I test them with written authorization. Repo 1 is the system. This is the toolkit built to attack it. Available for freelance engagements and full time roles.
+**Fazle Rabbi, Full-Stack AI Engineer specializing in secure production AI systems.** I build production AI systems that pass security review, then I test them with written authorization. Repo 1 is the system. This is the toolkit built to attack it. Available for freelance engagements and full time roles.
 Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabbi-ai/ | Loom demo: not recorded yet
 
 ## At a glance
