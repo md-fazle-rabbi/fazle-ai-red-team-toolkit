@@ -26,7 +26,7 @@ classifiers = [
 # pillow is held at 13.0.0 or newer. 12.3.0, the last 12.x release, has known
 # vulnerabilities that 13.0.0 fixes (pip-audit, 2026-10-25).
 dependencies = [
-    "fastapi>=0.143.0,<0.144",
+    "fastapi>=0.143.0,<0.163",
     "httpx2>=2.13.1,<3",
     "pillow>=13.0.0,<14",
     "pydantic>=2.14.1,<3",
