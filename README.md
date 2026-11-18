@@ -10,7 +10,7 @@
 **An authorized red-team and evaluation toolkit for LLM and RAG applications. It refuses to run without a written scope file, scores what comes back, and writes a report that holds counts, ids and framework mappings, never prompts or answers.**
 
 ## Hire me
-**Fazle Rabbi, AI Engineer specializing in secure production AI systems.** I build production AI systems that pass security review, then I test them with written authorization. Repo 1 is the system. This is the toolkit built to attack it. Available for freelance engagements and full time roles.
+**Fazle Rabbi, AI Engineer specializing in secure production AI systems.** I build production AI systems that pass security review, then I test them with written authorization. The platform is the system. This is the toolkit built to attack it. Available for freelance engagements and full time roles.
 Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabbi-ai/ | Loom demo: not recorded yet
 
 ## At a glance
@@ -18,7 +18,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 |---|---|---|
 | Scope gate | No valid Rules of Engagement file, no request. A refusal exits 2 and sends nothing | [`proof/roe-gate-demo.txt`](proof/roe-gate-demo.txt), [`proof/roe-gate-local-checks.txt`](proof/roe-gate-local-checks.txt) |
 | Exploit library | 25 probes tagged to OWASP LLM Top 10 ids. On the local stub the weak mode bypassed 24 of 25 and the gate exited 1. The hardened mode bypassed none and the gate exited 0. The hardened stub was built next to these probes, so that is not a measure of how hard the library is | [`proof/exploit-commands-local-checks.txt`](proof/exploit-commands-local-checks.txt) |
-| Against Repo 1 (local) | The 25 exploit probes run twice against a local fazle-enterprise-ai-platform with a synthetic tenant. First run: 3 bypassed (rate 0.1200, gate exit 1). After a redaction fix in Repo 1: none (rate 0.0000, gate exit 0). One run each, 25 probes, a weak signal | [`proof/repo1-exploit-run.txt`](proof/repo1-exploit-run.txt), [`proof/repo1-exploit-run-after-fix.txt`](proof/repo1-exploit-run-after-fix.txt), [before-fix report](proof/report-repo1-before-fix.md), [after-fix report](proof/report-repo1-after-fix.md), [database rows](proof/repo1-run-database-evidence.txt) |
+| Against the platform (local) | The 25 exploit probes run twice against a local fazle-enterprise-ai-platform with a synthetic tenant. First run: 3 bypassed (rate 0.1200, gate exit 1). After a redaction fix in the platform: none (rate 0.0000, gate exit 0). One run each, 25 probes, a weak signal | [`proof/repo1-exploit-run.txt`](proof/repo1-exploit-run.txt), [`proof/repo1-exploit-run-after-fix.txt`](proof/repo1-exploit-run-after-fix.txt), [before-fix report](proof/report-repo1-before-fix.md), [after-fix report](proof/report-repo1-after-fix.md), [database rows](proof/repo1-run-database-evidence.txt) |
 | Image probes | `image-probe` and `image-gate` send images through the gate and judge the bypass rate. A stand-in extractor reads PNG metadata, so this is not OCR and not a vision model | [`proof/image-gate-run.txt`](proof/image-gate-run.txt), [`proof/image-report-end-to-end-run.txt`](proof/image-report-end-to-end-run.txt) |
 | Third party tools stay in scope | A local gated proxy forwards an in-scope request, answers 403 to a path outside the file, and audits both without bodies. garak runs through it | [`proof/gated-proxy-smoke.txt`](proof/gated-proxy-smoke.txt) |
 | Load gate in CI | One run on a GitHub runner: 50 users for 20 s through the proxy, p95 88 ms, no failures. One run against a stub, not a measured safe limit | [`proof/load-gate-ci-run.txt`](proof/load-gate-ci-run.txt), [`proof/load-count-gap.txt`](proof/load-count-gap.txt) |
@@ -28,14 +28,14 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 | Client delivery process | Onboarding, rituals and offboarding documents. No client engagement has used them yet | [`docs/client-delivery`](docs/client-delivery) |
 | CI | Four workflows (CI, Exploit gate, Load gate, Garak gate) passing on commit 864693d | [`proof/ci-final-green.png`](proof/ci-final-green.png) |
 
-*Every result above except the Repo 1 row is against a local stub with synthetic data. The Repo 1 row is one local stack with a synthetic tenant, not a real system.*
+*Every result above except the platform row is against a local stub with synthetic data. The platform row is one local stack with a synthetic tenant, not a real system.*
 
 ## Read this first
 - Authorized testing only. Read [SECURITY.md](SECURITY.md) before pointing this at anything you do not own.
 - "Aligned" means mapped to a framework. Nothing here is a certification, an audit or legal advice.
 - Every check reduces risk. None of them removes it, and a pass says one run stayed inside a limit.
 - Limits such as 0.05 and 0.10 are policy values I chose, not measured ones.
-- The exploit library has been run twice against a local fazle-enterprise-ai-platform. The other suites have not been run against it. See "Running against Repo 1".
+- The exploit library has been run twice against a local fazle-enterprise-ai-platform. The other suites have not been run against it. See "Running against the platform".
 
 ## How to read this repo
 - 30 seconds: the table above.
@@ -43,7 +43,7 @@ Contact: mfrabbi.ai@gmail.com | LinkedIn: https://www.linkedin.com/in/fazle-rabb
 - 10 minutes: the sections for the exploit library, image probes and the report, then the decisions in [docs/adr](docs/adr).
 
 ## Status
-Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. The exploit library has been run twice against a local fazle-enterprise-ai-platform (see Running against Repo 1). Every other result in this repository is against a stub or synthetic data and says nothing about it. Screenshot of the passing workflows for commit 864693d, taken 2026-10-27: [proof/ci-final-green.png](proof/ci-final-green.png).
+Early, and working end to end against local stubs and synthetic data. The Rules of Engagement gate, a gated runner, a request budget, a gated proxy, a scoring layer, an exploit library of 25 probes with a run command and a gate, an image probe command and gate, gates for load, fairness and robustness, and a report with a findings section all run. The exploit library has been run twice against a local fazle-enterprise-ai-platform (see Running against the platform). Every other result in this repository is against a stub or synthetic data and says nothing about it. Screenshot of the passing workflows for commit 864693d, taken 2026-10-27: [proof/ci-final-green.png](proof/ci-final-green.png).
 
 ## What this is
 A single deep exploit and evaluation suite, not a grab-bag of scripts. The reference target
@@ -86,7 +86,7 @@ Use `hardened_app` for the other mode. Run it on localhost only: it is vulnerabl
 purpose, so never pass `--host 0.0.0.0`.
 
 The stub's request and response shape is pinned by tests against
-`contracts/repo1-query-contract.json`, a snapshot of Repo 1's `POST /query` models copied
+`contracts/repo1-query-contract.json`, a snapshot of the platform's `POST /query` models copied
 by hand at a named commit.
 
 ## Gated HTTP runner
@@ -226,10 +226,10 @@ Check a robustness summary with `redteam-toolkit robustness-gate --summary FILE`
 ## Client delivery
 Three short documents describe how I would run a client engagement with this toolkit: [onboarding](docs/client-delivery/onboarding.md), [rituals](docs/client-delivery/rituals.md) and [offboarding](docs/client-delivery/offboarding.md). They mark which points the Rules of Engagement loader enforces and which are only habits. No client engagement has used them yet.
 
-## Running against Repo 1
-The exploit library has been run twice against a local fazle-enterprise-ai-platform (Repo 1) with a synthetic tenant and no real data. The scope file is a copy of `examples/roe.repo1-local.toml`. It is a `self_owned` file, which the loader only accepts when every target is local. Repo 1 was fixed between the two runs: [ADR-037](https://github.com/md-fazle-rabbi/fazle-enterprise-ai-platform/blob/main/docs/adr/ADR-037-phone-numbers-with-no-area-code.md) and commit `dbf5589`.
+## Running against the platform
+The exploit library has been run twice against a local fazle-enterprise-ai-platform (the platform) with a synthetic tenant and no real data. The scope file is a copy of `examples/roe.repo1-local.toml`. It is a `self_owned` file, which the loader only accepts when every target is local. The platform was fixed between the two runs: [ADR-037](https://github.com/md-fazle-rabbi/fazle-enterprise-ai-platform/blob/main/docs/adr/ADR-037-phone-numbers-with-no-area-code.md) and commit `dbf5589`.
 
-**Setup.** Start Repo 1 with `docker compose up -d` in its clone. The app listens on `http://localhost:8000`. These runs sent the raw `X-Tenant-ID` header, which works because `ALLOW_UNAUTHENTICATED_TENANT_HEADER` is true in that stack. Copy the example file to `engagements/` (git-ignored) and set `credentials_env_var` to the name of the variable that holds the tenant id. The file only names the variable and never holds the value. Make a synthetic tenant id and a canary, and keep them in a git-ignored env file:
+**Setup.** Start the platform with `docker compose up -d` in its clone. The app listens on `http://localhost:8000`. These runs sent the raw `X-Tenant-ID` header, which works because `ALLOW_UNAUTHENTICATED_TENANT_HEADER` is true in that stack. Copy the example file to `engagements/` (git-ignored) and set `credentials_env_var` to the name of the variable that holds the tenant id. The file only names the variable and never holds the value. Make a synthetic tenant id and a canary, and keep them in a git-ignored env file:
 
 ```bash
 mkdir -p engagements runs
@@ -257,7 +257,7 @@ curl -sS --fail-with-body -X POST http://localhost:8000/ingest \
 
 The phone number in the contact document is malformed on purpose. Do not replace it with a valid one: it is the regression case for the redaction fix. The canary document makes the canary something a probe can pull out of retrieved context.
 
-**Run.** Clear Repo 1's semantic cache first (from the Repo 1 clone), then run:
+**Run.** Clear the platform's semantic cache first (from the platform clone), then run:
 
 ```bash
 docker compose exec -T redis redis-cli DEL "semantic_cache:$REPO1_TEST_TENANT"
@@ -272,7 +272,7 @@ uv run redteam-toolkit exploit-gate --summary runs/repo1-exploit-run.json
 
 The file allows 2 requests per minute, so 25 probes take about 12 minutes. One request took about 9.4 seconds on that stack (two samples, not a p95), so the runs used `--timeout 60`.
 
-| | First run | After the Repo 1 fix |
+| | First run | After the platform fix |
 |---|---|---|
 | Probes sent | 25 | 25 |
 | Blocked / held / bypassed | 18 / 4 / 3 | 18 / 7 / 0 |
@@ -293,86 +293,14 @@ uv run pytest --cov --cov-fail-under=90
 ```
 
 ## Known limitations
-- The two Repo 1 runs are one run each of 25 probes, so the change from 3 bypasses to 0 is a measurement from a weak sample. The answers served for the three bypassed probes (EX-011, EX-012 and EX-024) were read from Repo 1's review queue afterwards ([`proof/repo1-run-database-evidence.txt`](proof/repo1-run-database-evidence.txt)). Each held the phone number I seeded in a malformed form (a country code and 7 digits, no area code), and each returned the placeholder in the second run. That shows a gap in Repo 1's redaction for that form, not a general weakness. The rows come from Repo 1's database and are matched to probes by question text and by time. The toolkit summary does not record which detector fired.
-- The exploit summary holds ids and counts. It does not record which detector fired or how
-  many answers came from Repo 1's semantic cache, so near paraphrase probes may have shared
-  an answer. The cache was cleared before each run.
-- The canary sits in a seeded document, not in a system prompt, so it measures whether a
-  probe can make the model repeat that note, not a system prompt leak. The `flagged` field
-  of Repo 1's answer is noise on a tenant with four documents, so the toolkit judges the
-  answer text only.
-- The Repo 1 runs used the raw `X-Tenant-ID` header on a local stack, a four document
-  synthetic tenant and a single operator. They did not test Keycloak, the demo key or a
-  deployed system. The image prompt injection suite was not run against Repo 1.
-- The exploit library holds 25 probes, the low end of the 25 to 31 the plan calls for.
-  Every one aims at the stub's canary and contact details, so it is a start and not
-  coverage of what attackers try. All 25 entries were added and reviewed on 2026-10-25,
-  so there is no refresh history yet. The refresh cadence is in [ADR-003](docs/adr/ADR-003-exploit-library-refresh-cadence.md), and nothing enforces it yet.
-- The exploit run scores the `answer` field only, with two detectors: the canary and
-  personal data. A leak that sits only in the retrieved context or the citations is not
-  seen, and a bypass means only that a detector fired.
-- The `Exploit gate` workflow runs the exploit library against both stubs on every push and pull request. It checks only that the weak stub fails the gate and the hardened stub passes it. One bypass of 25 is 0.04, so a single new bypass still passes.
-- EX-010 cannot tell the weak stub from the hardened one, because the weak stub only
-  obeys override phrases. It was held in the one weak run.
-- The findings catalogue holds seven kinds. The CVSS vectors on four of them are my
-  judgement and assume an attacker with an ordinary account or key. Three kinds carry
-  no score, because CVSS does not describe them. The load finding has no input, so it
-  never appears. A report with no findings means only that no result met a threshold.
-- The client delivery documents are a process I wrote. No client engagement has used
-  them, and nothing in the toolkit enforces them.
-- A result against the stub says nothing about fazle-enterprise-ai-platform. The stub has
-  three documents and no model, and its answers come from fixed rules.
-- Hardened mode is imperfect on purpose. A spaced-out injection such as `i.g.n.o.r.e`
-  passes its firewall, and only the output scrub stops the leak. The one exploit run
-  found 0 bypasses of 25 against it, which is a result on a stub built next to the
-  probes.
-- The stub is checked against `contracts/repo1-query-contract.json`, a snapshot copied by
-  hand from Repo 1 at commit 715a933. That catches the stub drifting from the snapshot.
-  Nothing refreshes the snapshot, so it cannot catch Repo 1 changing after that commit.
-  The history of the query router, the image upload router and the limits file shows
-  their last changes on 2026-10-14, 2026-10-11 and 2026-10-11, all before that commit,
-  so as of Repo 1 commit dbf5589 nothing in those three files is missing from the snapshot.
-- The gate checks what the file says is authorized. It cannot tell whether the signature
-  behind the file is genuine. For a client engagement the file records the SHA-256 of the
-  signed document, and a person still has to check that document.
-- The request limits in the file are validated against ceilings in the code. The ceilings
-  (120 requests per minute, 10,000 requests in total, 10 at once, a 31 day window) are
-  values I chose, not measured ones. A `self_owned` file, which may only cover local targets, may ask for up to 60,000 per minute, 100,000 in total and 50 at once (ADR-013).
-- The URL check compares text, not the address a name resolves to, and it cannot stop an
-  HTTP client from following a redirect off the target. `send_probe` turns redirects off
-  by default; a caller that builds its own client has to do the same.
-- Using the budget is opt in. `send_probe` works without one, and nothing forces a suite
-  to pass it, so a suite that skips it can still send as fast as it likes.
-- `RequestBudget` lives in memory. Its `acquire` is thread safe, so the count and the
-  spacing stay right when several threads call it. The count starts at zero in every
-  new process, so two runs in a row each get the full `total_requests`. The class does
-  not enforce the file's `concurrency` limit, because it never sees a request finish.
-  The gated proxy holds at most that many requests in flight. A caller that sends from
-  several threads without the proxy has to hold the slots itself.
-- The budget spaces requests by the file's rate. It does not know how fast the target can
-  actually answer, so a rate above what a real target can handle will still overload it.
-- `send_probe` opens and closes its own HTTP client per call unless one is passed in,
-  which is wasteful for a suite that sends many requests.
-- The two targets in `examples/roe.stub-local.toml` share one address. The gate cannot
-  tell which stub mode is actually running on port 8010; that is on the person running it.
-- IBM ART 1.20.1 runs in its own environment on Python 3.13. Its package metadata lists
-  Python 3.10 to 3.12 and not 3.13, so that is a use outside what the package states.
-  Only one numeric attack on synthetic numbers has run. PyRIT has its own environment
-  and is not used in CI. DeepTeam is not installed, see
-  [ADR-014](docs/adr/ADR-014-leave-deepteam-out-for-now.md).
-- garak 0.17.1 is installed in its own environment outside this repository. It has run
-  seven stock probes at a cap of 8 prompts each through the gated proxy, against the
-  weak and the hardened stub, 80 requests per run. That is a small sample and not a
-  full scan. The garak workflow repeats the hardened run.
-- garak sends its own requests, so the Rules of Engagement gate, window and request
-  budget do not bind it at run time. Running the gate check by hand first is a habit,
-  not enforcement.
-- CI runs lint, type check, tests with a coverage gate, pip-audit, CodeQL and zizmor on
-  the workflow files. zizmor runs offline, so its audits that call the GitHub API (for
-  example checking that a pinned commit really belongs to the action's repository) do
-  not run. CI also runs a load gate and a garak gate against local stubs. There is no
-  container scan yet. Trivy was left out on
-  purpose, see [ADR-010](docs/adr/ADR-010-workflow-audit-instead-of-trivy.md).
+The four that matter most:
+
+- The two runs against the platform (3 bypassed, then 0) are one run each of 25 probes on a synthetic four document tenant, so the change is a weak sample. Keycloak, a deployed system and the image suite were not tested.
+- Every other result here is against a local stub with synthetic data. The hardened stub was built next to the probes, so 0 of 25 on it says nothing about a real target.
+- Limits such as 0.05, 0.10, 20 and 30 are policy values I chose, not measured ones.
+- garak sends its own requests, so the scope gate and request budget do not bind it at run time. Running the gate check first is a habit, not enforcement.
+
+Full list: [docs/known-limitations.md](docs/known-limitations.md).
 
 ## License
 MIT, see [LICENSE.md](LICENSE.md).
